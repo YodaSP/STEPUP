@@ -37,7 +37,7 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Top Navbar */}
       <header className="bg-blue-700 text-white flex justify-between items-center px-6 py-4 shadow-md">
-        <div className="text-2xl font-bold">KAAM Admin Dashboard</div>
+        <div className="text-2xl font-bold">STEPUP Admin Dashboard</div>
         <button
           onClick={handleLogout}
           className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
