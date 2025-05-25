@@ -4,15 +4,15 @@ const studentSchema = new mongoose.Schema({
   fullName: String,
   email: String,
   phone: String,
-  qualification: String,
   university: String,
-  specialization: String,
-  passingYear: String,
+  degree: String, // Replaces qualification and specialization
+  passingDate: String, // Can also be Date type if needed
   skills: String,
   jobRole: String,
-  location: String,
-  resume: String, // File path
-  photo: String,  // File path
+  preferredLocation: String,
+  currentLocation: String, // NEW
+  resume: String,
+  photo: String,
 });
 
 module.exports = mongoose.model("Student", studentSchema);
