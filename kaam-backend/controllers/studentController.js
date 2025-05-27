@@ -1,5 +1,6 @@
 const Student = require("../models/Student");
 
+// POST /api/students
 exports.registerStudent = async (req, res) => {
   try {
     const {
@@ -41,3 +42,13 @@ exports.registerStudent = async (req, res) => {
   }
 };
 
+// GET /api/students
+exports.getAllStudents = async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.status(200).json(students);
+  } catch (error) {
+    console.error("Error fetching students:", error);
+    res.status(500).json({ message: "Failed to fetch students" });
+  }
+};

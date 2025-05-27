@@ -8,9 +8,12 @@ const AdminLogin = ({ onLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username === "admin" && password === "admin123") {
-      onLogin();            // this sets the isAdminAuthenticated flag in App.js
-      navigate("/admin-dashboard");  // this redirects to the dashboard
+    // Your admin credentials - replace as needed
+    if (username === "admin" && password === "admin") {
+      const authToken = btoa(`${username}:${password}`);  // base64 encode
+      localStorage.setItem("authToken", authToken);        // save encoded credentials
+      onLogin();
+      navigate("/admin-dashboard");
     } else {
       alert("Invalid credentials");
     }

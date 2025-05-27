@@ -6,12 +6,11 @@ const AdminDashboard = () => {
   const [executives, setExecutives] = useState([]);
   const [activeSection, setActiveSection] = useState("Dashboard");
 
-  // Filters
   const [studentSkillFilter, setStudentSkillFilter] = useState("");
   const [execSkillFilter, setExecSkillFilter] = useState("");
   const [execDesignationFilter, setExecDesignationFilter] = useState("");
 
-  // Fetch data from backend
+  // Fetch data
   useEffect(() => {
     fetchStudents();
     fetchExecutives();
@@ -19,19 +18,39 @@ const AdminDashboard = () => {
 
   const fetchStudents = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/students");
+      const authToken = localStorage.getItem("authToken"); // base64 username:password
+      if (!authToken) throw new Error("No auth token found");
+      const res = await axios.get("http://localhost:5000/api/students", {
+        headers: {
+          Authorization: `Basic ${authToken}`,   // Use Basic Auth header
+        },
+      });
       setStudents(res.data);
     } catch (err) {
       console.error("Error fetching students:", err);
+      if (err.response && err.response.status === 401) {
+        alert("Session expired or unauthorized. Please login again.");
+        handleLogout();
+      }
     }
   };
 
   const fetchExecutives = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/executives");
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) throw new Error("No auth token found");
+      const res = await axios.get("http://localhost:5000/api/executives", {
+        headers: {
+          Authorization: `Basic ${authToken}`,
+        },
+      });
       setExecutives(res.data);
     } catch (err) {
       console.error("Error fetching executives:", err);
+      if (err.response && err.response.status === 401) {
+        alert("Session expired or unauthorized. Please login again.");
+        handleLogout();
+      }
     }
   };
 
@@ -44,14 +63,15 @@ const AdminDashboard = () => {
     <li
       onClick={() => setActiveSection(name)}
       className={`cursor-pointer px-2 py-1 rounded ${
-        activeSection === name ? "bg-blue-100 text-blue-700 font-bold" : "hover:text-blue-600"
+        activeSection === name
+          ? "bg-blue-100 text-blue-700 font-bold"
+          : "hover:text-blue-600"
       }`}
     >
       {name}
     </li>
   );
 
-  // Filtering logic
   const filteredStudents = students.filter((s) =>
     s.skills?.toLowerCase().includes(studentSkillFilter.toLowerCase())
   );
@@ -67,12 +87,15 @@ const AdminDashboard = () => {
       {/* Top Navbar */}
       <header className="bg-blue-700 text-white flex justify-between items-center px-6 py-4 shadow-md">
         <div className="text-2xl font-bold">STEPUP Admin Dashboard</div>
-        <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded hover:bg-red-700">
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 px-4 py-2 rounded hover:bg-red-700"
+        >
           Logout
         </button>
       </header>
 
-      {/* Main */}
+      {/* Main Layout */}
       <div className="flex flex-1">
         {/* Sidebar */}
         <nav className="w-64 bg-white shadow-md p-6">
@@ -80,7 +103,6 @@ const AdminDashboard = () => {
             <SidebarItem name="Dashboard" />
             <SidebarItem name="Students" />
             <SidebarItem name="Company Executives" />
-            <SidebarItem name="Settings" />
           </ul>
         </nav>
 
@@ -89,18 +111,20 @@ const AdminDashboard = () => {
           {activeSection === "Dashboard" && (
             <>
               <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome, Admin</h1>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded shadow text-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                <div
+                  onClick={() => setActiveSection("Students")}
+                  className="bg-white p-8 rounded-2xl shadow-lg text-center cursor-pointer hover:bg-blue-50 transition"
+                >
                   <h2 className="text-xl font-semibold text-blue-700 mb-2">Total Students</h2>
-                  <p className="text-3xl font-bold">{students.length}</p>
+                  <p className="text-4xl font-bold">{students.length}</p>
                 </div>
-                <div className="bg-white p-6 rounded shadow text-center">
+                <div
+                  onClick={() => setActiveSection("Company Executives")}
+                  className="bg-white p-8 rounded-2xl shadow-lg text-center cursor-pointer hover:bg-blue-50 transition"
+                >
                   <h2 className="text-xl font-semibold text-blue-700 mb-2">Total Executives</h2>
-                  <p className="text-3xl font-bold">{executives.length}</p>
-                </div>
-                <div className="bg-white p-6 rounded shadow text-center">
-                  <h2 className="text-xl font-semibold text-blue-700 mb-2">Active Jobs</h2>
-                  <p className="text-3xl font-bold">12</p>
+                  <p className="text-4xl font-bold">{executives.length}</p>
                 </div>
               </div>
             </>
@@ -180,13 +204,6 @@ const AdminDashboard = () => {
                   </tbody>
                 </table>
               </div>
-            </>
-          )}
-
-          {activeSection === "Settings" && (
-            <>
-              <h2 className="text-3xl font-bold mb-6 text-gray-800">Settings</h2>
-              <p>This is the settings section. You can add your settings form or options here.</p>
             </>
           )}
         </main>
