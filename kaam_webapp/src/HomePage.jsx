@@ -73,13 +73,13 @@ const HomePage = () => {
             className="cursor-pointer border border-gray-200 rounded-2xl bg-white p-8 shadow hover:shadow-lg transition duration-300 hover:border-green-500"
           >
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              I am a Company Executive
+              I am a CXO
             </h2>
             <p className="text-gray-600 text-sm mb-4">
-              Register yourself if you are a Company executive.
+              Register yourself if you are a CXO.
             </p>
             <button className="mt-2 text-green-600 font-medium hover:underline">
-              Register as Executive →
+              Register as cxo →
             </button>
           </div>
         </div>

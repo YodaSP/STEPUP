@@ -1,27 +1,45 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const AdminDashboard = () => {
-  // Example data for demo
-  const [students] = useState([
-    { id: 1, name: "Rahul Kumar", email: "rahul@example.com", skills: "React, Node" },
-    { id: 2, name: "Priya Singh", email: "priya@example.com", skills: "Python, Django" },
-  ]);
-
-  const [executives] = useState([
-    { id: 1, name: "Mr. Sharma", company: "ABC Corp", designation: "CFO" },
-    { id: 2, name: "Mrs. Mehta", company: "XYZ Ltd", designation: "CMO" },
-  ]);
-
-  // State to track which section to show
+  const [students, setStudents] = useState([]);
+  const [executives, setExecutives] = useState([]);
   const [activeSection, setActiveSection] = useState("Dashboard");
 
-  // Logout handler
+  // Filters
+  const [studentSkillFilter, setStudentSkillFilter] = useState("");
+  const [execSkillFilter, setExecSkillFilter] = useState("");
+  const [execDesignationFilter, setExecDesignationFilter] = useState("");
+
+  // Fetch data from backend
+  useEffect(() => {
+    fetchStudents();
+    fetchExecutives();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/students");
+      setStudents(res.data);
+    } catch (err) {
+      console.error("Error fetching students:", err);
+    }
+  };
+
+  const fetchExecutives = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/executives");
+      setExecutives(res.data);
+    } catch (err) {
+      console.error("Error fetching executives:", err);
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem("authToken"); // example
+    localStorage.removeItem("authToken");
     window.location.href = "/admin-login";
   };
 
-  // Sidebar item component for better reuse and active styling
   const SidebarItem = ({ name }) => (
     <li
       onClick={() => setActiveSection(name)}
@@ -33,20 +51,28 @@ const AdminDashboard = () => {
     </li>
   );
 
+  // Filtering logic
+  const filteredStudents = students.filter((s) =>
+    s.skills?.toLowerCase().includes(studentSkillFilter.toLowerCase())
+  );
+
+  const filteredExecutives = executives.filter(
+    (e) =>
+      e.skills?.toLowerCase().includes(execSkillFilter.toLowerCase()) &&
+      e.designation?.toLowerCase().includes(execDesignationFilter.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Top Navbar */}
       <header className="bg-blue-700 text-white flex justify-between items-center px-6 py-4 shadow-md">
         <div className="text-2xl font-bold">STEPUP Admin Dashboard</div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
-        >
+        <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded hover:bg-red-700">
           Logout
         </button>
       </header>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex flex-1">
         {/* Sidebar */}
         <nav className="w-64 bg-white shadow-md p-6">
@@ -58,14 +84,11 @@ const AdminDashboard = () => {
           </ul>
         </nav>
 
-        {/* Content Area */}
+        {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
-          {/* Render different content based on active section */}
           {activeSection === "Dashboard" && (
             <>
               <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome, Admin</h1>
-
-              {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white p-6 rounded shadow text-center">
                   <h2 className="text-xl font-semibold text-blue-700 mb-2">Total Students</h2>
@@ -77,7 +100,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="bg-white p-6 rounded shadow text-center">
                   <h2 className="text-xl font-semibold text-blue-700 mb-2">Active Jobs</h2>
-                  <p className="text-3xl font-bold">12</p> {/* Example */}
+                  <p className="text-3xl font-bold">12</p>
                 </div>
               </div>
             </>
@@ -85,7 +108,14 @@ const AdminDashboard = () => {
 
           {activeSection === "Students" && (
             <>
-              <h2 className="text-3xl font-bold mb-6 text-gray-800">Registered Students</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-800">Registered Students</h2>
+              <input
+                type="text"
+                placeholder="Filter by Skills"
+                className="mb-4 p-2 border border-gray-300 rounded w-full md:w-1/2"
+                value={studentSkillFilter}
+                onChange={(e) => setStudentSkillFilter(e.target.value)}
+              />
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white rounded shadow">
                   <thead className="bg-blue-600 text-white">
@@ -96,11 +126,11 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map((student) => (
-                      <tr key={student.id} className="border-b hover:bg-gray-100">
-                        <td className="py-3 px-6">{student.name}</td>
-                        <td className="py-3 px-6">{student.email}</td>
-                        <td className="py-3 px-6">{student.skills}</td>
+                    {filteredStudents.map((s) => (
+                      <tr key={s._id} className="border-b hover:bg-gray-100">
+                        <td className="py-3 px-6">{s.fullName}</td>
+                        <td className="py-3 px-6">{s.email}</td>
+                        <td className="py-3 px-6">{s.skills}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -111,7 +141,23 @@ const AdminDashboard = () => {
 
           {activeSection === "Company Executives" && (
             <>
-              <h2 className="text-3xl font-bold mb-6 text-gray-800">Registered Company Executives</h2>
+              <h2 className="text-3xl font-bold mb-4 text-gray-800">Registered Company Executives</h2>
+              <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 mb-4">
+                <input
+                  type="text"
+                  placeholder="Filter by Skills"
+                  className="p-2 border border-gray-300 rounded w-full md:w-1/3"
+                  value={execSkillFilter}
+                  onChange={(e) => setExecSkillFilter(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Filter by Designation"
+                  className="p-2 border border-gray-300 rounded w-full md:w-1/3"
+                  value={execDesignationFilter}
+                  onChange={(e) => setExecDesignationFilter(e.target.value)}
+                />
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white rounded shadow">
                   <thead className="bg-blue-600 text-white">
@@ -119,14 +165,16 @@ const AdminDashboard = () => {
                       <th className="py-3 px-6 text-left">Name</th>
                       <th className="py-3 px-6 text-left">Company</th>
                       <th className="py-3 px-6 text-left">Designation</th>
+                      <th className="py-3 px-6 text-left">Skills</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {executives.map((exec) => (
-                      <tr key={exec.id} className="border-b hover:bg-gray-100">
-                        <td className="py-3 px-6">{exec.name}</td>
-                        <td className="py-3 px-6">{exec.company}</td>
-                        <td className="py-3 px-6">{exec.designation}</td>
+                    {filteredExecutives.map((e) => (
+                      <tr key={e._id} className="border-b hover:bg-gray-100">
+                        <td className="py-3 px-6">{e.fullName}</td>
+                        <td className="py-3 px-6">{e.currentCompanyName}</td>
+                        <td className="py-3 px-6">{e.designation}</td>
+                        <td className="py-3 px-6">{e.skills}</td>
                       </tr>
                     ))}
                   </tbody>
