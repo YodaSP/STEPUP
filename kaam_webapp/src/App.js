@@ -5,6 +5,7 @@ import StudentForm from "./StudentForm";
 import ExecutiveForm from "./ExecutiveForm";
 import AdminLogin from "./AdminLogin";
 import AdminDashboard from "./AdminDashboard";
+import EmployerForm from "./EmployerForm";
 
 const App = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = React.useState(false);
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/student-register" element={<StudentForm />} />
         <Route path="/executive-register" element={<ExecutiveForm />} />
+        <Route path="/employer-register" element={<EmployerForm />} />
         <Route
           path="/admin-login"
           element={<AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />}

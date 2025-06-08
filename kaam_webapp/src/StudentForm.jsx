@@ -1,6 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const StudentForm = () => {
+  useEffect(() => {
+      window.scrollTo(0, 0);
+       }, []);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -68,17 +71,22 @@ const StudentForm = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 bg-white p-8 rounded-lg shadow">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-6 px-4 shadow-md text-center mb-8">
-        <h2 className="text-3xl font-bold">Student Registration</h2>
-        <p className="text-sm mt-2 text-blue-100">
-          Register now to connect with top employers
+    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 py-10 px-4">
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-3xl shadow-xl mb-10 text-center max-w-3xl mx-auto">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-md">
+          Student Registration
+        </h2>
+        <p className="text-base md:text-lg text-white mt-3">
+          Register now to connect with top employers and step into your dream job.
         </p>
+        <div className="absolute top-0 right-0 m-4 text-white text-opacity-30 text-7xl font-extrabold pointer-events-none select-none hidden md:block">
+          🎓
+        </div>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-lg grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <input
           type="text"
@@ -241,7 +249,7 @@ const StudentForm = () => {
         <div className="md:col-span-2">
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-full font-semibold shadow-lg hover:from-blue-700 hover:to-purple-700 transition"
           >
             Submit Registration
           </button>

@@ -5,6 +5,7 @@ const path = require("path");
 
 const studentRoutes = require("./routes/studentRoutes");
 const executiveRoutes = require("./routes/executiveRoutes");
+const employerRoutes = require("./routes/employerRoutes");
 
 
 
@@ -25,7 +26,7 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 // Routes
 app.use("/api/students", studentRoutes);
 app.use("/api/executives", executiveRoutes);
-
+app.use("/api/employers", employerRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);

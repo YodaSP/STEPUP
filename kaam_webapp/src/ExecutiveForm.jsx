@@ -1,6 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const ExecutiveForm = () => {
+   useEffect(() => {
+    window.scrollTo(0, 0);
+     }, []);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -20,10 +23,10 @@ const ExecutiveForm = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData({
+      ...formData,
       [name]: files ? files[0] : value,
-    }));
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -66,17 +69,22 @@ const ExecutiveForm = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-8 rounded-lg shadow">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-6 px-4 shadow-md text-center mb-8">
-        <h2 className="text-3xl font-bold">Company Executive Registration</h2>
-        <p className="text-sm mt-2 text-blue-100">
-          Register now to connect with top employers
+    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 py-10 px-4">
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-3xl shadow-xl mb-10 text-center max-w-3xl mx-auto">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-md">
+          Company Executive Registration
+        </h2>
+        <p className="text-base md:text-lg text-white mt-3">
+          Register now to connect with top employers and grow your career.
         </p>
+        <div className="absolute top-0 right-0 m-4 text-white text-opacity-30 text-7xl font-extrabold pointer-events-none select-none hidden md:block">
+          💼
+        </div>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-b-lg grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-lg grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <input
           type="text"
@@ -84,7 +92,7 @@ const ExecutiveForm = () => {
           placeholder="Full Name"
           value={formData.fullName}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           required
         />
         <input
@@ -93,7 +101,7 @@ const ExecutiveForm = () => {
           placeholder="Email"
           value={formData.email}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           required
         />
         <input
@@ -102,7 +110,7 @@ const ExecutiveForm = () => {
           placeholder="Mobile Number"
           value={formData.phone}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           required
         />
         <input
@@ -111,7 +119,7 @@ const ExecutiveForm = () => {
           placeholder="Designation (e.g., CFO, CMO)"
           value={formData.designation}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
         <input
           type="text"
@@ -119,7 +127,7 @@ const ExecutiveForm = () => {
           placeholder="Department (e.g., Finance, Marketing)"
           value={formData.department}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
         <input
           type="text"
@@ -127,7 +135,7 @@ const ExecutiveForm = () => {
           placeholder="Years of Experience"
           value={formData.experience}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
         <input
           type="text"
@@ -135,7 +143,7 @@ const ExecutiveForm = () => {
           placeholder="Current Company Name"
           value={formData.company}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
         <input
           type="text"
@@ -143,52 +151,52 @@ const ExecutiveForm = () => {
           placeholder="Office Location / City"
           value={formData.location}
           onChange={handleChange}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
-<div className="md:col-span-2">
-  <input
-    type="text"
-    name="skills"
-    placeholder="Skills / Tools (e.g., SAP, Excel)"
-    value={formData.skills}
-    onChange={handleChange}
-    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-  />
-</div>
 
-<div>
-  <label className="block text-sm font-medium text-gray-600 mb-1">
-    Upload Resume (PDF)
-  </label>
-  <input
-    type="file"
-    name="resume"
-    accept=".pdf"
-    onChange={handleChange}
-    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    ref={resumeRef}
-  />
-</div>
+        <div className="md:col-span-2">
+          <input
+            type="text"
+            name="skills"
+            placeholder="Skills / Tools (e.g., SAP, Excel)"
+            value={formData.skills}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-<div>
-  <label className="block text-sm font-medium text-gray-600 mb-1">
-    Upload Profile Photo (JPG/PNG)
-  </label>
-  <input
-    type="file"
-    name="photo"
-    accept=".jpg,.jpeg,.png"
-    onChange={handleChange}
-    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    ref={photoRef}
-  />
-</div>
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-1 block">
+            Upload Resume (PDF)
+          </label>
+          <input
+            type="file"
+            name="resume"
+            accept=".pdf"
+            onChange={handleChange}
+            className="input"
+            ref={resumeRef}
+          />
+        </div>
 
+        <div>
+          <label className="text-sm font-medium text-gray-600 mb-1 block">
+            Upload Profile Photo (JPG/PNG)
+          </label>
+          <input
+            type="file"
+            name="photo"
+            accept=".jpg,.jpeg,.png"
+            onChange={handleChange}
+            className="input"
+            ref={photoRef}
+          />
+        </div>
 
         <div className="md:col-span-2">
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-full font-semibold shadow-lg hover:from-blue-700 hover:to-purple-700 transition"
           >
             Submit Registration
           </button>

@@ -17,16 +17,13 @@ const registerExecutive = async (req, res) => {
 
     // Basic validation
     if (!fullName || !email || !phone || !designation) {
-      return res.status(400).json({ error: "fullName, email, phone, and designation are required." });
+      return res.status(400).json({
+        error: "fullName, email, phone, and designation are required.",
+      });
     }
 
-    // Normalize skills to array if it's a string (comma separated)
-    let skillsArray = [];
-    if (typeof skills === "string") {
-      skillsArray = skills.split(",").map(skill => skill.trim()).filter(Boolean);
-    } else if (Array.isArray(skills)) {
-      skillsArray = skills;
-    }
+    // Normalize skills to trimmed string if present
+    const normalizedSkills = typeof skills === "string" ? skills.trim() : "";
 
     const resumePath = req.files?.resume?.[0]?.path || null;
     const photoPath = req.files?.photo?.[0]?.path || null;
@@ -40,7 +37,7 @@ const registerExecutive = async (req, res) => {
       experience,
       company,
       location,
-      skills: skillsArray,
+      skills: normalizedSkills,
       resume: resumePath,
       photo: photoPath,
     });
@@ -63,8 +60,8 @@ const getAllExecutives = async (req, res) => {
     const filter = {};
 
     if (skills) {
-      const skillsArray = skills.split(",").map(skill => skill.trim());
-      filter.skills = { $all: skillsArray };  // Executives must have all these skills
+      // Regex to match any skill keywords in the skills string (case-insensitive)
+      filter.skills = { $regex: skills.split(",").join("|"), $options: "i" };
     }
 
     if (designation) {
