@@ -28,6 +28,12 @@ app.use("/api/students", studentRoutes);
 app.use("/api/executives", executiveRoutes);
 app.use("/api/employers", employerRoutes);
 
+// Test route to verify server is working
+app.get("/api/test", (req, res) => {
+  console.log("🧪 Test endpoint called");
+  res.json({ message: "Backend server is working!", timestamp: new Date().toISOString() });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

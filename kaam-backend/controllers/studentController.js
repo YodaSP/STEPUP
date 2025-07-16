@@ -45,10 +45,30 @@ exports.registerStudent = async (req, res) => {
 // GET /api/students
 exports.getAllStudents = async (req, res) => {
   try {
+    console.log("📚 getAllStudents controller called");
     const students = await Student.find();
+    console.log("📊 Found", students.length, "students");
+    console.log("📋 Students data:", students);
     res.status(200).json(students);
   } catch (error) {
-    console.error("Error fetching students:", error);
+    console.error("❌ Error fetching students:", error);
     res.status(500).json({ message: "Failed to fetch students" });
+  }
+};
+
+// GET /api/students/email/:email - Get student by email (for student login)
+exports.getStudentByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const student = await Student.findOne({ email });
+    
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    
+    res.status(200).json(student);
+  } catch (error) {
+    console.error("Error fetching student by email:", error);
+    res.status(500).json({ message: "Failed to fetch student" });
   }
 };

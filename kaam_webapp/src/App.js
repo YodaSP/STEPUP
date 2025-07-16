@@ -6,9 +6,26 @@ import ExecutiveForm from "./ExecutiveForm";
 import AdminLogin from "./AdminLogin";
 import AdminDashboard from "./AdminDashboard";
 import EmployerForm from "./EmployerForm";
+import StudentLogin from "./StudentLogin";
+import StudentDashboard from "./StudentDashboard";
+import CXOLogin from "./CXOLogin";
+import CXODashboard from "./CXODashboard";
 
 const App = () => {
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = React.useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = React.useState(() => {
+    // Check if admin is already authenticated from localStorage
+    return localStorage.getItem("adminAuthenticated") === "true";
+  });
+
+  const handleAdminLogin = () => {
+    setIsAdminAuthenticated(true);
+    localStorage.setItem("adminAuthenticated", "true");
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    localStorage.removeItem("adminAuthenticated");
+  };
 
   return (
     <Router>
@@ -19,13 +36,35 @@ const App = () => {
         <Route path="/employer-register" element={<EmployerForm />} />
         <Route
           path="/admin-login"
-          element={<AdminLogin onLogin={() => setIsAdminAuthenticated(true)} />}
+          element={
+            isAdminAuthenticated ? (
+              <Navigate to="/admin-dashboard" />
+            ) : (
+              <AdminLogin onLogin={handleAdminLogin} />
+            )
+          }
+        />
+        <Route
+          path="/student-login"
+          element={<StudentLogin />}
+        />
+        <Route
+          path="/student-dashboard"
+          element={<StudentDashboard />}
+        />
+        <Route
+          path="/cxo-login"
+          element={<CXOLogin />}
+        />
+        <Route
+          path="/cxo-dashboard"
+          element={<CXODashboard />}
         />
         <Route
           path="/admin-dashboard"
           element={
             isAdminAuthenticated ? (
-              <AdminDashboard onLogout={() => setIsAdminAuthenticated(false)} />
+              <AdminDashboard onLogout={handleAdminLogout} />
             ) : (
               <Navigate to="/admin-login" />
             )

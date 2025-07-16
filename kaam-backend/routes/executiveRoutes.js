@@ -3,7 +3,13 @@ const router = express.Router();
 const upload = require("../middleware/upload");
 const adminAuth = require("../middleware/adminAuth"); // import the middleware
 
-const { registerExecutive, getAllExecutives } = require("../controllers/executiveController");
+const { registerExecutive, getAllExecutives, getExecutiveByEmail } = require("../controllers/executiveController");
+
+// Test route to verify executive routes are working
+router.get("/test", (req, res) => {
+  console.log("🧪 Executive test route called");
+  res.json({ message: "Executive routes are working!", timestamp: new Date().toISOString() });
+});
 
 router.post(
   "/",
@@ -13,6 +19,9 @@ router.post(
   ]),
   registerExecutive
 );
+
+// Public route to get executive by email (for CXO login) - MUST come before the general route
+router.get("/email/:email", getExecutiveByEmail);
 
 // Protect GET /executives with adminAuth middleware
 router.get("/", adminAuth, getAllExecutives);

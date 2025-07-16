@@ -44,10 +44,13 @@ exports.registerEmployer = async (req, res) => {
 // ✅ Now correctly defined outside and exported
 exports.getAllEmployers = async (req, res) => {
   try {
+    console.log("🏢 getAllEmployers controller called");
     const employers = await Employer.find().sort({ createdAt: -1 });
+    console.log("📊 Found", employers.length, "employers");
+    console.log("📋 Employers data:", employers);
     res.status(200).json(employers);
   } catch (error) {
-    console.error("Error fetching employers:", error);
+    console.error("❌ Error fetching employers:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
