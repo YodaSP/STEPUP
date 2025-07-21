@@ -1,7 +1,6 @@
-import React, { useRef } from "react";
-import Lottie from "lottie-react";
-import animationData from "./assets/animation.json";
+import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MumbaiIcon, DelhiIcon, BengaluruIcon, HyderabadIcon, ChennaiIcon, PuneIcon, KolkataIcon, KochiIcon, ChandigarhIcon, AhmedabadIcon } from './assets/CityIcons';
 
 const cardData = [
   {
@@ -29,9 +28,73 @@ const cardData = [
   },
 ];
 
+// Define a fixed array of 10 major cities with icon mapping
+const fixedCities = [
+  { name: "Mumbai", icon: MumbaiIcon },
+  { name: "Delhi-NCR", icon: DelhiIcon },
+  { name: "Bengaluru", icon: BengaluruIcon },
+  { name: "Hyderabad", icon: HyderabadIcon },
+  { name: "Chandigarh", icon: ChandigarhIcon },
+  { name: "Ahmedabad", icon: AhmedabadIcon },
+  { name: "Chennai", icon: ChennaiIcon },
+  { name: "Pune", icon: PuneIcon },
+  { name: "Kolkata", icon: KolkataIcon },
+  { name: "Kochi", icon: KochiIcon },
+];
+
+// Bar layout constants for 8 bars, strictly increasing, bottom-aligned
+const ANIMATION_BAR_COUNT = 8;
+const ANIMATION_PANEL_SIZE = 400; // circle diameter
+const FLAT_BAR_HEIGHTS = [60, 90, 120, 150, 180, 220, 260, 320]; // strictly increasing
+const FLAT_BAR_WIDTH = Math.floor((ANIMATION_PANEL_SIZE * 0.7) / ANIMATION_BAR_COUNT * 0.7); // thick bars
+const FLAT_BAR_GAP = Math.floor((ANIMATION_PANEL_SIZE * 0.7 - ANIMATION_BAR_COUNT * FLAT_BAR_WIDTH) / (ANIMATION_BAR_COUNT - 1));
+const FLAT_BARS_TOTAL_WIDTH = ANIMATION_BAR_COUNT * FLAT_BAR_WIDTH + (ANIMATION_BAR_COUNT - 1) * FLAT_BAR_GAP;
+const FLAT_BARS_X_START = (ANIMATION_PANEL_SIZE - FLAT_BARS_TOTAL_WIDTH) / 2;
+const FLAT_BAR_COLORS = [
+  '#60a5fa', '#38bdf8', '#3b82f6', '#2563eb', '#6366f1', '#4338ca', '#1d4ed8', '#1e3a8a'
+];
+// Calculate bar width and gap for perfect centering
+const TOTAL_BAR_WIDTH = ANIMATION_PANEL_SIZE * 0.7; // bars take up 70% of circle width
+const BAR_WIDTH = Math.floor(TOTAL_BAR_WIDTH / (ANIMATION_BAR_COUNT * 1.5 - 0.5));
+const BAR_GAP = BAR_WIDTH / 2;
+const BARS_TOTAL_WIDTH = ANIMATION_BAR_COUNT * BAR_WIDTH + (ANIMATION_BAR_COUNT - 1) * BAR_GAP;
+const BARS_X_START = (ANIMATION_PANEL_SIZE - BARS_TOTAL_WIDTH) / 2;
+
+// Add a color override map for button gradients
+const cardButtonGradients = {
+  blue: 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+  green: 'from-green-600 to-green-700 hover:from-green-700 hover:to-green-800', // deeper green for CXO
+  purple: 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700',
+};
+
 const HomePage = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showRegistrationPanel, setShowRegistrationPanel] = useState(false);
   const secondSectionRef = useRef(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("http://localhost:5000/api/stats/registrations-by-location")
+      .then((res) => res.json())
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Failed to load stats");
+        setLoading(false);
+      });
+  }, []);
+
+  const handleRegisterClick = () => {
+    setShowRegistrationPanel(true);
+    setTimeout(() => {
+      secondSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100); // allow panel to render
+  };
 
   const scrollToSecondSection = () => {
     secondSectionRef.current?.scrollIntoView({ 
@@ -41,151 +104,212 @@ const HomePage = () => {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative mobile-no-scroll">
-      {/* Login Buttons - Responsive Header */}
-      <header className="w-full fixed top-0 left-0 z-30 bg-white bg-opacity-95 backdrop-blur-sm shadow-sm border-b border-gray-100">
-        <div className="container-responsive">
-          <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-4 space-y-2 sm:space-y-0">
-            {/* Logo/Brand */}
-            <div className="flex items-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                <span className="text-blue-600">StepUp</span>
-              </h1>
-            </div>
-            
-            {/* Login Buttons */}
-            <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3">
-              <button
-                onClick={() => navigate("/student-login")}
-                className="btn-touch bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
-              >
-                Student Login
-              </button>
-              <button
-                onClick={() => navigate("/cxo-login")}
-                className="btn-touch bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
-              >
-                CXO Login
-              </button>
-              <button
-                onClick={() => navigate("/admin-login")}
-                className="btn-touch bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
-              >
-                Admin Login
-              </button>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50 relative mobile-no-scroll">
+      <div className="flex-1 flex flex-col">
+        {/* Login Buttons - Responsive Header */}
+        <header className="w-full fixed top-0 left-0 z-30 bg-white bg-opacity-95 backdrop-blur-sm shadow-sm border-b border-gray-100">
+          <div className="container-responsive">
+            <div className="flex flex-col sm:flex-row justify-between items-center py-3 sm:py-4 space-y-2 sm:space-y-0">
+              {/* Logo/Brand */}
+              <div className="flex items-center">
+                <a href="/" onClick={e => { e.preventDefault(); navigate('/'); }} className="focus:outline-none">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+                    <span className="text-blue-600">StepUp</span>
+                  </h1>
+                </a>
+              </div>
+              
+              {/* Login Buttons */}
+              <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => navigate("/student-login")}
+                  className="btn-touch bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
+                >
+                  Student Login
+                </button>
+                <button
+                  onClick={() => navigate("/cxo-login")}
+                  className="btn-touch bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
+                >
+                  CXO Login
+                </button>
+                <button
+                  onClick={() => navigate("/admin-login")}
+                  className="btn-touch bg-gray-800 hover:bg-gray-900 text-white font-semibold rounded-full shadow-sm text-sm sm:text-base px-3 sm:px-4"
+                >
+                  Admin Login
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Spacer to avoid content hiding behind fixed header */}
-      <div className="h-16 sm:h-20" />
+        {/* Spacer to avoid content hiding behind fixed header */}
+        <div className="h-16 sm:h-20" />
 
-      {/* Intro Section - Fully Responsive */}
-      <section className="min-h-screen flex flex-col-reverse lg:flex-row items-center justify-between py-8 sm:py-12 lg:py-16 xl:py-24">
-        <div className="container-responsive">
-          <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-8 lg:gap-12 xl:gap-16">
-            {/* Text Content */}
-            <div className="flex-1 space-y-6 sm:space-y-8 text-center lg:text-left max-w-xl lg:max-w-2xl">
-              <h1 className="heading-responsive font-extrabold text-gray-900 leading-tight tracking-tight">
+        {/* Hero Section with Map and Stats */}
+        {/* 1. Hero section at the top (increased padding, larger elements) */}
+        <section className="min-h-screen h-[90vh] flex flex-col justify-center items-center w-full relative overflow-hidden">
+          <div className="animated-hero-bg" />
+          <div className="blobs-bg">
+            <div className="blob blob1" />
+            <div className="blob blob2" />
+            <div className="blob blob3" />
+          </div>
+          <div className="container-responsive w-full relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left: Main content */}
+            <div className="flex-1 max-w-2xl space-y-6 sm:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight tracking-tight mt-0 mb-2">
                 Welcome to <span className="text-blue-600">StepUp</span>
               </h1>
-              <p className="text-responsive text-gray-700 leading-relaxed">
+              <p className="text-lg sm:text-xl text-gray-700 leading-relaxed mb-2">
                 Empowering students and executives to take their careers to the next level.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <span className="bg-blue-100 rounded-full px-4 py-2 text-sm sm:text-base font-medium text-gray-800">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
+                <span className="bg-blue-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800">
                   🎓 <strong>25,000+</strong> Students Registered
                 </span>
-                <span className="bg-green-100 rounded-full px-4 py-2 text-sm sm:text-base font-medium text-gray-800">
+                <span className="bg-green-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800">
                   🧑‍💼 <strong>10,000+</strong> CXOs Onboarded
                 </span>
               </div>
-              <button
-                onClick={scrollToSecondSection}
-                className="btn-touch mt-6 sm:mt-8 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full shadow-lg transition-all duration-200 text-base sm:text-lg w-full sm:w-auto"
-              >
-                Click to Register Now
-              </button>
+              {/* Trending Cities Horizontal Tile */}
+              <div className="w-full flex justify-center mb-4">
+                <div className="bg-white/80 rounded-2xl shadow grid grid-cols-2 sm:grid-cols-5 gap-2 px-4 py-2 max-w-full border border-blue-100 justify-center items-center">
+                  {fixedCities.map((city, idx) => {
+                    const stat = stats.find(
+                      s => s.location && s.location.toLowerCase().replace(/\s+/g, "") === city.name.toLowerCase().replace(/\s+/g, "")
+                    );
+                    const students = stat ? stat.students : 0;
+                    const cxos = stat ? stat.cxos : 0;
+                    const CityIcon = city.icon;
+                    return (
+                      <div
+                        key={city.name}
+                        className="flex flex-col items-center min-w-[80px] px-2 transition-transform duration-200 hover:scale-110 hover:shadow-lg hover:bg-blue-50/70 cursor-pointer"
+                      >
+                        <CityIcon style={{ width: 28, height: 28 }} />
+                        <span className="text-xs font-bold text-blue-700 mt-1 mb-0.5">{city.name}</span>
+                        <div className="flex flex-row gap-1">
+                          <span className="bg-blue-100 text-blue-700 rounded-full px-1 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                            🎓 {students}
+                          </span>
+                          <span className="bg-green-100 text-green-700 rounded-full px-1 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                            🧑‍💼 {cxos}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Register Now button below trending panel, larger */}
+              <div className="w-full flex justify-center py-6">
+                <button
+                  onClick={handleRegisterClick}
+                  className="btn-touch px-10 py-4 text-lg sm:text-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-full shadow-lg transition-all duration-200"
+                >
+                  Click to Register Now
+                </button>
+              </div>
             </div>
-
-            {/* Animation */}
-            <div className="flex-1 w-full flex justify-center lg:justify-end max-w-xs sm:max-w-sm lg:max-w-md">
-              <div className="rounded-full bg-gradient-to-tr from-blue-100 via-white to-purple-100 p-4 sm:p-6 shadow-xl w-full max-w-[280px] sm:max-w-[320px]">
-                <Lottie
-                  animationData={animationData}
-                  loop
-                  style={{ width: "100%", height: "auto" }}
-                  aria-label="Welcome animation"
-                />
+            {/* Right: Large circle with animated rising bars */}
+            <div className="flex-1 w-full flex justify-end items-center max-w-[400px]">
+              <div className="relative flex items-end justify-center w-[320px] h-[320px] sm:w-[400px] sm:h-[400px] overflow-visible">
+                <svg width="100%" height="100%" viewBox={`0 0 ${ANIMATION_PANEL_SIZE} ${ANIMATION_PANEL_SIZE}`} className="absolute left-0 top-0">
+                  {Array.from({ length: ANIMATION_BAR_COUNT }).map((_, i) => {
+                    const barHeight = FLAT_BAR_HEIGHTS[i];
+                    const x = FLAT_BARS_X_START + i * (FLAT_BAR_WIDTH + FLAT_BAR_GAP);
+                    const bottomPadding = 32;
+                    const y = ANIMATION_PANEL_SIZE - barHeight - bottomPadding;
+                    return (
+                      <rect
+                        key={i}
+                        x={x}
+                        y={y}
+                        width={FLAT_BAR_WIDTH}
+                        height={barHeight}
+                        rx={Math.floor(FLAT_BAR_WIDTH/2.5)}
+                        fill={FLAT_BAR_COLORS[i]}
+                        style={{
+                          opacity: 0,
+                          animation: `barRise 1s cubic-bezier(.4,0,.2,1) 1`,
+                          animationDelay: `${i * 0.18}s`,
+                          animationFillMode: 'forwards',
+                          transformOrigin: `${x + FLAT_BAR_WIDTH/2}px ${ANIMATION_PANEL_SIZE - bottomPadding}px`,
+                        }}
+                        className={`animated-bar bar-${i}`}
+                      />
+                    );
+                  })}
+                  <style>{`
+                    @keyframes barRise {
+                      0% { opacity: 0; transform: scaleY(0); }
+                      100% { opacity: 1; transform: scaleY(1); }
+                    }
+                  `}</style>
+                </svg>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Second Section: Gateway + Cards - Responsive Grid */}
-      <section
-        ref={secondSectionRef}
-        className="bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 text-white py-12 sm:py-16 lg:py-20"
-      >
-        <div className="container-responsive">
-          <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 drop-shadow-lg">
-              Welcome to STEPUP - Your Gateway to Interim Jobs
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl text-blue-100 max-w-3xl mx-auto mb-10 sm:mb-14 leading-relaxed">
-              Connect with top employers and find opportunities that match your skills.
-              Start your journey today by registering your profile.
-            </p>
+        {/* Second Section: Gateway + Cards - Responsive Grid */}
+        {showRegistrationPanel && (
+          <section
+            ref={secondSectionRef}
+            className="bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 text-white py-12 sm:py-16 lg:py-20 min-h-screen flex flex-col justify-center"
+          >
+            <div className="container-responsive">
+              <div className="text-center max-w-4xl mx-auto">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 drop-shadow-lg">
+                  Welcome to STEPUP - Your Gateway to Interim Jobs
+                </h2>
+                <p className="text-base sm:text-lg md:text-xl text-blue-100 max-w-3xl mx-auto mb-10 sm:mb-14 leading-relaxed">
+                  Connect with top employers and find opportunities that match your skills.
+                  Start your journey today by registering your profile.
+                </p>
 
-            {/* CTA Cards container - Responsive Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
-              {cardData.map((card, idx) => (
-                <div
-                  key={card.title}
-                  onClick={() => navigate(card.route)}
-                  className={`
-                    cursor-pointer rounded-2xl sm:rounded-3xl bg-white/90 p-6 sm:p-8 flex flex-col items-center h-full
-                    shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-300 border-2
-                    border-transparent hover:border-${card.color}-500
-                    text-gray-800 transform hover:-translate-y-1
-                  `}
-                  style={{
-                    minHeight: '280px',
-                    boxShadow:
-                      idx === 1
-                        ? "0 8px 32px 0 rgba(34,197,94,0.15)"
-                        : idx === 2
-                        ? "0 8px 32px 0 rgba(168,85,247,0.15)"
-                        : "0 8px 32px 0 rgba(59,130,246,0.15)",
-                  }}
-                >
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 text-center">
-                    {card.title}
-                  </h2>
-                  <p className="text-gray-600 text-sm sm:text-base mb-6 flex-1 text-center leading-relaxed">
-                    {card.description}
-                  </p>
-                  <button
-                    className={`
-                      btn-touch px-4 sm:px-5 py-2 sm:py-3 rounded-full font-semibold text-sm sm:text-base
-                      bg-gradient-to-r from-${card.color}-500 to-${card.color}-600
-                      text-white shadow hover:from-${card.color}-600 hover:to-${card.color}-700
-                      transition-all duration-200 w-full sm:w-auto
-                    `}
-                  >
-                    {card.button}
-                  </button>
+                {/* CTA Cards container - Responsive Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+                  {cardData.map((card) => (
+                    <div
+                      key={card.title}
+                      onClick={() => navigate(card.route)}
+                      className={`
+                        cursor-pointer rounded-2xl sm:rounded-3xl bg-white/90 p-6 sm:p-8 flex flex-col justify-between items-center h-full
+                        shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-300 border-2
+                        border-transparent hover:border-${card.color}-500
+                        text-gray-800 transform hover:-translate-y-1
+                        min-h-[320px]
+                      `}
+                    >
+                      <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 text-center">
+                        {card.title}
+                      </h2>
+                      <p className="text-gray-600 text-sm sm:text-base mb-6 flex-1 text-center leading-relaxed">
+                        {card.description}
+                      </p>
+                      <button
+                        className={`
+                          btn-touch w-full px-4 sm:px-5 py-3 rounded-full font-semibold text-sm sm:text-base
+                          bg-gradient-to-r ${cardButtonGradients[card.color]}
+                          text-white shadow transition-all duration-200
+                          min-h-[48px] whitespace-nowrap
+                        `}
+                      >
+                        {card.button}
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
-
+          </section>
+        )}
+      </div>
       {/* Footer - Responsive */}
-      <footer className="bg-white border-t border-gray-200 text-xs sm:text-sm text-gray-500 text-center py-4 sm:py-6">
+      <footer className="bg-white border-t border-gray-200 text-xs sm:text-sm text-gray-500 text-center py-4 sm:py-6 mt-auto">
         <div className="container-responsive">
           &copy; {new Date().getFullYear()} STEPUP. All rights reserved.
         </div>

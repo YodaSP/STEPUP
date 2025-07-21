@@ -28,6 +28,40 @@ app.use("/api/students", studentRoutes);
 app.use("/api/executives", executiveRoutes);
 app.use("/api/employers", employerRoutes);
 
+// Combined stats endpoint for frontend trending panel
+app.get("/api/stats/registrations-by-location", async (req, res) => {
+  try {
+    // Fetch student and executive location stats in parallel
+    const [studentRes, executiveRes] = await Promise.all([
+      mongoose.connection.collection("students").aggregate([
+        { $group: { _id: "$currentLocation", students: { $sum: 1 } } },
+        { $project: { _id: 0, location: "$_id", students: 1 } },
+      ]).toArray(),
+      mongoose.connection.collection("executives").aggregate([
+        { $group: { _id: "$currentLocation", cxos: { $sum: 1 } } },
+        { $project: { _id: 0, location: "$_id", cxos: 1 } },
+      ]).toArray(),
+    ]);
+
+    // Merge by location
+    const statsMap = {};
+    studentRes.forEach(({ location, students }) => {
+      if (!location) return;
+      statsMap[location] = { location, students, cxos: 0 };
+    });
+    executiveRes.forEach(({ location, cxos }) => {
+      if (!location) return;
+      if (!statsMap[location]) statsMap[location] = { location, students: 0, cxos };
+      else statsMap[location].cxos = cxos;
+    });
+    const merged = Object.values(statsMap).sort((a, b) => (b.students + b.cxos) - (a.students + a.cxos));
+    res.json(merged);
+  } catch (err) {
+    console.error("Error in /api/stats/registrations-by-location:", err);
+    res.status(500).json({ message: "Failed to fetch registration stats" });
+  }
+});
+
 // Test route to verify server is working
 app.get("/api/test", (req, res) => {
   console.log("🧪 Test endpoint called");

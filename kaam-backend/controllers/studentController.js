@@ -72,3 +72,29 @@ exports.getStudentByEmail = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch student" });
   }
 };
+
+// GET /api/students/location-stats - Get student count grouped by location
+exports.getStudentLocationStats = async (req, res) => {
+  try {
+    const stats = await Student.aggregate([
+      {
+        $group: {
+          _id: "$currentLocation",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$_id",
+          count: 1,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error("Error aggregating student location stats:", error);
+    res.status(500).json({ message: "Failed to fetch student location stats" });
+  }
+};

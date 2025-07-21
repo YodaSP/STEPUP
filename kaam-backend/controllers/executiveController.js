@@ -107,8 +107,35 @@ const getExecutiveByEmail = async (req, res) => {
   }
 };
 
+// GET /api/executives/location-stats - Get CXO count grouped by location
+const getExecutiveLocationStats = async (req, res) => {
+  try {
+    const stats = await Executive.aggregate([
+      {
+        $group: {
+          _id: "$currentLocation",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$_id",
+          count: 1,
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error("Error aggregating executive location stats:", error);
+    res.status(500).json({ message: "Failed to fetch executive location stats" });
+  }
+};
+
 module.exports = {
   registerExecutive,
   getAllExecutives,
   getExecutiveByEmail,
+  getExecutiveLocationStats,
 };
