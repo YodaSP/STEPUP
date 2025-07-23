@@ -31,4 +31,10 @@ router.post("/", upload.single("logo"), employerController.registerEmployer);
 // Admin-protected GET route (you need to create getAllEmployers in your controller)
 router.get("/", adminAuth, employerController.getAllEmployers);
 
+// Update employer by ID (admin only)
+router.put("/:id", adminAuth, employerController.updateEmployer);
+
+// Delete employer by ID (admin only)
+router.delete("/:id", adminAuth, employerController.deleteEmployer);
+
 module.exports = router;

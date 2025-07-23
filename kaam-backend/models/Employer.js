@@ -23,10 +23,8 @@ const employerSchema = new mongoose.Schema({
   website: String,
   location: String,
   logo: String, // Path to logo file
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+}, {
+  timestamps: true,
 });
 
 module.exports = mongoose.model("Employer", employerSchema);

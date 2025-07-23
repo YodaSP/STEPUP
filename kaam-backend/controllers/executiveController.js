@@ -1,12 +1,17 @@
 const Executive = require("../models/Executive");
 
-// POST /api/executives
 const registerExecutive = async (req, res) => {
   try {
     const {
       fullName,
       email,
       phone,
+      country,
+      otherCountry,
+      state,
+      otherState,
+      city,
+      otherCity,
       position, // Changed from designation to match frontend
       department,
       experience,
@@ -16,13 +21,12 @@ const registerExecutive = async (req, res) => {
       preferredLocation, // Added missing field
       linkedinProfile, // Added missing field
       skills,
+      gender,
     } = req.body;
 
     // Basic validation
-    if (!fullName || !email || !phone || !position) { // Changed from designation to position
-      return res.status(400).json({
-        error: "fullName, email, phone, and position are required.", // Updated error message
-      });
+    if (!fullName || !email || !phone || !country || !state || !city || !position || !company || !currentLocation) {
+      return res.status(400).json({ message: "All required fields must be provided." });
     }
 
     // Normalize skills to trimmed string if present
@@ -35,6 +39,12 @@ const registerExecutive = async (req, res) => {
       fullName,
       email,
       phone,
+      country,
+      otherCountry,
+      state,
+      otherState,
+      city,
+      otherCity,
       position, // Changed from designation
       department,
       experience,
@@ -46,6 +56,7 @@ const registerExecutive = async (req, res) => {
       skills: normalizedSkills,
       resume: resumePath,
       photo: photoPath,
+      gender,
     });
 
     await executive.save();
@@ -57,7 +68,6 @@ const registerExecutive = async (req, res) => {
   }
 };
 
-// GET /api/executives?skills=skill1,skill2&designation=Manager
 const getAllExecutives = async (req, res) => {
   try {
     console.log("🧑‍💼 getAllExecutives controller called");
@@ -85,7 +95,6 @@ const getAllExecutives = async (req, res) => {
   }
 };
 
-// GET /api/executives/email/:email - Get executive by email (for CXO login)
 const getExecutiveByEmail = async (req, res) => {
   try {
     const { email } = req.params;
@@ -107,7 +116,6 @@ const getExecutiveByEmail = async (req, res) => {
   }
 };
 
-// GET /api/executives/location-stats - Get CXO count grouped by location
 const getExecutiveLocationStats = async (req, res) => {
   try {
     const stats = await Executive.aggregate([
@@ -133,9 +141,69 @@ const getExecutiveLocationStats = async (req, res) => {
   }
 };
 
+const updateExecutive = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = { ...req.body };
+    if (req.body.gender) update.gender = req.body.gender;
+    // If files are present, add them
+    if (req.files?.resume) {
+      if (req.files.resume[0]?.mimetype !== "application/pdf") {
+        return res.status(400).json({ message: "Resume must be a PDF." });
+      }
+      update.resume = req.files.resume[0].path;
+    }
+    if (req.files?.photo) {
+      if (req.files.photo[0]?.mimetype && !req.files.photo[0].mimetype.startsWith("image/")) {
+        return res.status(400).json({ message: "Profile photo must be an image." });
+      }
+      update.photo = req.files.photo[0].path;
+    }
+    // Validate required fields (for update, only if present)
+    const requiredFields = [
+      "fullName", "email", "phone", "company", "position", "industry", "experience", "currentLocation"
+    ];
+    for (const field of requiredFields) {
+      if (field in update && (!update[field] || update[field].trim() === "")) {
+        return res.status(400).json({ message: `${field} is required.` });
+      }
+    }
+    // If resume is being updated, ensure it's present
+    if ("resume" in update && !update.resume) {
+      return res.status(400).json({ message: "Resume (PDF) is required." });
+    }
+    // Allow updating all new fields
+    const updated = await Executive.findByIdAndUpdate(id, update, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "Executive not found" });
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    console.error("Error updating executive:", error);
+    res.status(500).json({ message: "Failed to update executive" });
+  }
+};
+
+// DELETE /api/executives/:id - Delete executive by ID
+const deleteExecutive = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Executive.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Executive not found" });
+    }
+    res.status(200).json({ message: "Executive deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting executive:", error);
+    res.status(500).json({ message: "Failed to delete executive" });
+  }
+};
+
 module.exports = {
   registerExecutive,
   getAllExecutives,
   getExecutiveByEmail,
   getExecutiveLocationStats,
+  updateExecutive,
+  deleteExecutive,
 };

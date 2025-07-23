@@ -4,6 +4,8 @@ const upload = require("../middleware/upload");
 const adminAuth = require("../middleware/adminAuth"); // import the middleware
 
 const { registerExecutive, getAllExecutives, getExecutiveByEmail, getExecutiveLocationStats } = require("../controllers/executiveController");
+const { updateExecutive } = require("../controllers/executiveController");
+const { deleteExecutive } = require("../controllers/executiveController");
 
 // Test route to verify executive routes are working
 router.get("/test", (req, res) => {
@@ -28,5 +30,18 @@ router.get("/location-stats", getExecutiveLocationStats);
 
 // Protect GET /executives with adminAuth middleware
 router.get("/", adminAuth, getAllExecutives);
+
+// Update executive by ID (no admin required)
+router.put(
+  "/:id",
+  upload.fields([
+    { name: "resume", maxCount: 1 },
+    { name: "photo", maxCount: 1 }
+  ]),
+  updateExecutive
+);
+
+// Delete executive by ID (admin only)
+router.delete("/:id", adminAuth, deleteExecutive);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const Employer = require("../models/Employer");
 
 // Controller function to handle Employer registration
-exports.registerEmployer = async (req, res) => {
+const registerEmployer = async (req, res) => {
   try {
     const {
       companyName,
@@ -42,7 +42,7 @@ exports.registerEmployer = async (req, res) => {
 };
 
 // ✅ Now correctly defined outside and exported
-exports.getAllEmployers = async (req, res) => {
+const getAllEmployers = async (req, res) => {
   try {
     const employers = await Employer.find().sort({ createdAt: -1 });
     res.status(200).json(employers);
@@ -50,4 +50,41 @@ exports.getAllEmployers = async (req, res) => {
     console.error("Error fetching employers:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+};
+
+// PUT /api/employers/:id - Update employer by ID
+const updateEmployer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await Employer.findByIdAndUpdate(id, req.body, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "Employer not found" });
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    console.error("Error updating employer:", error);
+    res.status(500).json({ message: "Failed to update employer" });
+  }
+};
+
+// DELETE /api/employers/:id - Delete employer by ID
+const deleteEmployer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Employer.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Employer not found" });
+    }
+    res.status(200).json({ message: "Employer deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting employer:", error);
+    res.status(500).json({ message: "Failed to delete employer" });
+  }
+};
+
+module.exports = {
+  registerEmployer,
+  getAllEmployers,
+  updateEmployer,
+  deleteEmployer,
 };

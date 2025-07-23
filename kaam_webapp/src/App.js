@@ -10,6 +10,8 @@ import StudentLogin from "./StudentLogin";
 import StudentDashboard from "./StudentDashboard";
 import CXOLogin from "./CXOLogin";
 import CXODashboard from "./CXODashboard";
+import ThankYou from "./ThankYou";
+import ThankYouCXO from "./ThankYouCXO";
 
 const App = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = React.useState(() => {
@@ -34,6 +36,8 @@ const App = () => {
         <Route path="/student-register" element={<StudentForm />} />
         <Route path="/executive-register" element={<ExecutiveForm />} />
         <Route path="/employer-register" element={<EmployerForm />} />
+        <Route path="/thank-you" element={<ThankYou />} />
+        <Route path="/thank-you-cxo" element={<ThankYouCXO />} />
         <Route
           path="/admin-login"
           element={
@@ -53,12 +57,20 @@ const App = () => {
           element={<StudentDashboard />}
         />
         <Route
+          path="/student-edit"
+          element={<StudentForm />}
+        />
+        <Route
           path="/cxo-login"
           element={<CXOLogin />}
         />
         <Route
           path="/cxo-dashboard"
           element={<CXODashboard />}
+        />
+        <Route
+          path="/cxo-edit"
+          element={<ExecutiveForm />}
         />
         <Route
           path="/admin-dashboard"

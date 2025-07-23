@@ -58,7 +58,6 @@ const TOTAL_BAR_WIDTH = ANIMATION_PANEL_SIZE * 0.7; // bars take up 70% of circl
 const BAR_WIDTH = Math.floor(TOTAL_BAR_WIDTH / (ANIMATION_BAR_COUNT * 1.5 - 0.5));
 const BAR_GAP = BAR_WIDTH / 2;
 const BARS_TOTAL_WIDTH = ANIMATION_BAR_COUNT * BAR_WIDTH + (ANIMATION_BAR_COUNT - 1) * BAR_GAP;
-const BARS_X_START = (ANIMATION_PANEL_SIZE - BARS_TOTAL_WIDTH) / 2;
 
 // Add a color override map for button gradients
 const cardButtonGradients = {
@@ -70,22 +69,14 @@ const cardButtonGradients = {
 const HomePage = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showRegistrationPanel, setShowRegistrationPanel] = useState(false);
   const secondSectionRef = useRef(null);
 
   useEffect(() => {
-    setLoading(true);
     fetch("http://localhost:5000/api/stats/registrations-by-location")
       .then((res) => res.json())
       .then((data) => {
         setStats(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError("Failed to load stats");
-        setLoading(false);
       });
   }, []);
 
@@ -94,13 +85,6 @@ const HomePage = () => {
     setTimeout(() => {
       secondSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100); // allow panel to render
-  };
-
-  const scrollToSecondSection = () => {
-    secondSectionRef.current?.scrollIntoView({ 
-      behavior: "smooth",
-      block: "start"
-    });
   };
 
   return (
