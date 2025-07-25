@@ -71,6 +71,9 @@ const HomePage = () => {
   const [stats, setStats] = useState([]);
   const [showRegistrationPanel, setShowRegistrationPanel] = useState(false);
   const secondSectionRef = useRef(null);
+  const [showTrendingHeading, setShowTrendingHeading] = useState(false);
+  const [showCitiesPanel, setShowCitiesPanel] = useState(false);
+  const citiesPanelRef = useRef(null);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/stats/registrations-by-location")
@@ -78,6 +81,26 @@ const HomePage = () => {
       .then((data) => {
         setStats(data);
       });
+    const timer = setTimeout(() => setShowTrendingHeading(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (showTrendingHeading && !showCitiesPanel) {
+      const panelTimer = setTimeout(() => setShowCitiesPanel(true), 500);
+      return () => clearTimeout(panelTimer);
+    }
+  }, [showTrendingHeading, showCitiesPanel]);
+
+  useEffect(() => {
+    const observer = new window.IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setShowCitiesPanel(true);
+      },
+      { threshold: 0.2 }
+    );
+    if (citiesPanelRef.current) observer.observe(citiesPanelRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const handleRegisterClick = () => {
@@ -158,8 +181,18 @@ const HomePage = () => {
                 </span>
               </div>
               {/* Trending Cities Horizontal Tile */}
-              <div className="w-full flex justify-center mb-4">
-                <div className="bg-white/80 rounded-2xl shadow grid grid-cols-2 sm:grid-cols-5 gap-2 px-4 py-2 max-w-full border border-blue-100 justify-center items-center">
+              <div className="w-full flex justify-center mb-2 min-h-[32px]">
+                <h2
+                  className={`text-base sm:text-lg font-bold text-blue-700 text-center transition-all duration-700 ease-out
+                    ${showTrendingHeading ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+                  style={{ willChange: 'opacity, transform' }}
+                >
+                  Talents from the cities below have already registered. Join them now!
+                </h2>
+              </div>
+              <div className="w-full flex justify-center mb-4" ref={citiesPanelRef}>
+                <div className={`bg-white/80 rounded-2xl shadow grid grid-cols-2 sm:grid-cols-5 gap-2 px-4 py-2 max-w-full border border-blue-100 justify-center items-center transition-all duration-700 ease-out
+                  ${showCitiesPanel ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                   {fixedCities.map((city, idx) => {
                     const stat = stats.find(
                       s => s.location && s.location.toLowerCase().replace(/\s+/g, "") === city.name.toLowerCase().replace(/\s+/g, "")
@@ -170,7 +203,10 @@ const HomePage = () => {
                     return (
                       <div
                         key={city.name}
-                        className="flex flex-col items-center min-w-[80px] px-2 transition-transform duration-200 hover:scale-110 hover:shadow-lg hover:bg-blue-50/70 cursor-pointer"
+                        className={`flex flex-col items-center min-w-[80px] px-2 transition-all duration-700 ease-out
+                          ${showCitiesPanel ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                          delay-[${idx * 120}ms] hover:scale-110 hover:shadow-lg hover:bg-blue-50/70 cursor-pointer`}
+                        style={{ transitionDelay: `${idx * 120}ms` }}
                       >
                         <CityIcon style={{ width: 28, height: 28 }} />
                         <span className="text-xs font-bold text-blue-700 mt-1 mb-0.5">{city.name}</span>
