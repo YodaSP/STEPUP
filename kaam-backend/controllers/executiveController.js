@@ -3,6 +3,7 @@ const Executive = require("../models/Executive");
 const registerExecutive = async (req, res) => {
   try {
     const {
+      // Section 1: Personal Information
       fullName,
       email,
       phone,
@@ -12,30 +13,76 @@ const registerExecutive = async (req, res) => {
       otherState,
       city,
       otherCity,
-      position, // Changed from designation to match frontend
-      department,
-      experience,
-      company,
-      currentLocation, // Changed from location to match frontend
-      industry, // Added missing field
-      preferredLocation, // Added missing field
-      linkedinProfile, // Added missing field
-      skills,
+      currentLocation,
+      dateOfBirth,
+      maritalStatus,
       gender,
+
+      // Section 2: Professional Information
+      currentDesignation,
+      totalYearsExperience,
+      linkedinProfile,
+      careerObjective,
+
+      // Section 3: Education
+      highestQualification,
+      institutionName,
+      yearOfCompletion,
+      specialization,
+      additionalCertifications,
+
+      // Section 4: Work Experience
+      workExperience,
+
+      // Section 5: Skills
+      technicalSkills,
+      softSkills,
+      toolsTechnologies,
+      languagesKnown,
+
+      // Section 6: Additional Information
+      awardsRecognition,
+      hobbiesInterests,
+      professionalMemberships,
+
+      // Legacy fields
+      position,
+      company,
+      industry,
+      experience,
+      preferredLocation,
+      skills,
+      department,
     } = req.body;
 
-    // Basic validation
-    if (!fullName || !email || !phone || !country || !state || !city || !position || !company || !currentLocation) {
-      return res.status(400).json({ message: "All required fields must be provided." });
+    // Basic validation for required fields
+    if (!fullName || !email || !phone || !currentLocation) {
+      return res.status(400).json({ message: "Name, email, phone, and location are required fields." });
     }
 
-    // Normalize skills to trimmed string if present
+    // Parse work experience if it's a string
+    let parsedWorkExperience = [];
+    if (workExperience) {
+      try {
+        parsedWorkExperience = typeof workExperience === 'string' ? JSON.parse(workExperience) : workExperience;
+      } catch (error) {
+        console.log("Work experience parsing failed, using as string");
+        parsedWorkExperience = [];
+      }
+    }
+
+    // Normalize skills fields
+    const normalizedTechnicalSkills = typeof technicalSkills === "string" ? technicalSkills.trim() : "";
+    const normalizedSoftSkills = typeof softSkills === "string" ? softSkills.trim() : "";
+    const normalizedToolsTechnologies = typeof toolsTechnologies === "string" ? toolsTechnologies.trim() : "";
+    const normalizedLanguagesKnown = typeof languagesKnown === "string" ? languagesKnown.trim() : "";
     const normalizedSkills = typeof skills === "string" ? skills.trim() : "";
 
     const resumePath = req.files?.resume?.[0]?.path || null;
     const photoPath = req.files?.photo?.[0]?.path || null;
 
     const executive = new Executive({
+      // Section 1: Personal Information
       fullName,
       email,
       phone,
@@ -45,18 +92,50 @@ const registerExecutive = async (req, res) => {
       otherState,
       city,
       otherCity,
-      position, // Changed from designation
-      department,
-      experience,
+      currentLocation,
+      dateOfBirth,
+      maritalStatus,
+      gender,
+
+      // Section 2: Professional Information
+      currentDesignation: currentDesignation || position, // Use currentDesignation or fallback to position
+      totalYearsExperience: totalYearsExperience || experience, // Use totalYearsExperience or fallback to experience
+      linkedinProfile,
+      careerObjective,
+
+      // Section 3: Education
+      highestQualification,
+      institutionName,
+      yearOfCompletion,
+      specialization,
+      additionalCertifications,
+
+      // Section 4: Work Experience
+      workExperience: parsedWorkExperience,
+
+      // Section 5: Skills
+      technicalSkills: normalizedTechnicalSkills,
+      softSkills: normalizedSoftSkills,
+      toolsTechnologies: normalizedToolsTechnologies,
+      languagesKnown: normalizedLanguagesKnown,
+
+      // Section 6: Additional Information
+      awardsRecognition,
+      hobbiesInterests,
+      professionalMemberships,
+
+      // Legacy fields (for backward compatibility)
+      position: currentDesignation || position,
       company,
-      currentLocation, // Changed from location
-      industry, // Added missing field
-      preferredLocation, // Added missing field
-      linkedinProfile, // Added missing field
+      industry,
+      experience: totalYearsExperience || experience,
+      preferredLocation,
       skills: normalizedSkills,
+      department,
+
+      // Files
       resume: resumePath,
       photo: photoPath,
-      gender,
     });
 
     await executive.save();
@@ -145,8 +224,8 @@ const updateExecutive = async (req, res) => {
   try {
     const { id } = req.params;
     const update = { ...req.body };
-    if (req.body.gender) update.gender = req.body.gender;
-    // If files are present, add them
+    
+    // Handle file uploads
     if (req.files?.resume) {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {
         return res.status(400).json({ message: "Resume must be a PDF." });
@@ -159,19 +238,40 @@ const updateExecutive = async (req, res) => {
       }
       update.photo = req.files.photo[0].path;
     }
+
+    // Parse work experience if it's a string
+    if (update.workExperience) {
+      try {
+        update.workExperience = typeof update.workExperience === 'string' ? JSON.parse(update.workExperience) : update.workExperience;
+      } catch (error) {
+        console.log("Work experience parsing failed, using as string");
+        update.workExperience = [];
+      }
+    }
+
+    // Handle legacy field mappings
+    if (update.currentDesignation && !update.position) {
+      update.position = update.currentDesignation;
+    }
+    if (update.totalYearsExperience && !update.experience) {
+      update.experience = update.totalYearsExperience;
+    }
+
     // Validate required fields (for update, only if present)
     const requiredFields = [
-      "fullName", "email", "phone", "company", "position", "industry", "experience", "currentLocation"
+      "fullName", "email", "phone", "currentLocation"
     ];
     for (const field of requiredFields) {
       if (field in update && (!update[field] || update[field].trim() === "")) {
         return res.status(400).json({ message: `${field} is required.` });
       }
     }
+
     // If resume is being updated, ensure it's present
     if ("resume" in update && !update.resume) {
       return res.status(400).json({ message: "Resume (PDF) is required." });
     }
+
     // Allow updating all new fields
     const updated = await Executive.findByIdAndUpdate(id, update, { new: true });
     if (!updated) {

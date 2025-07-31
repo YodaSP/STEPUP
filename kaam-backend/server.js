@@ -43,18 +43,65 @@ app.get("/api/stats/registrations-by-location", async (req, res) => {
       ]).toArray(),
     ]);
 
-    // Merge by location
+    // Function to normalize location (extract city name)
+    const normalizeLocation = (location) => {
+      if (!location) return null;
+      
+      // Special handling for Delhi variations
+      const lowerLocation = location.toLowerCase();
+      if (lowerLocation.includes('Delhi') || lowerLocation.includes('ncr') || lowerLocation.includes('new delhi')) {
+        return 'delhi';
+      }
+      
+      // If location contains comma, extract the city part (after comma)
+      if (location.includes(',')) {
+        const parts = location.split(',').map(part => part.trim());
+        // Return the last part (city) and capitalize it
+        const city = parts[parts.length - 1];
+        const lowerCity = city.toLowerCase();
+        if (lowerCity.includes('Delhi') || lowerCity.includes('ncr') || lowerCity.includes('new delhi')) {
+          return 'delhi';
+        }
+        return city.charAt(0).toUpperCase() + city.slice(1).toLowerCase();
+      }
+      
+      // If no comma, return the location as is, capitalized
+      return location.charAt(0).toUpperCase() + location.slice(1).toLowerCase();
+    };
+
+    // Merge by normalized location
     const statsMap = {};
+    
+    // Process student data
     studentRes.forEach(({ location, students }) => {
       if (!location) return;
-      statsMap[location] = { location, students, cxos: 0 };
+      const normalizedLoc = normalizeLocation(location);
+      if (!normalizedLoc) return;
+      
+      if (!statsMap[normalizedLoc]) {
+        statsMap[normalizedLoc] = { location: normalizedLoc, students, cxos: 0 };
+      } else {
+        statsMap[normalizedLoc].students += students;
+      }
     });
+    
+    // Process executive data
     executiveRes.forEach(({ location, cxos }) => {
       if (!location) return;
-      if (!statsMap[location]) statsMap[location] = { location, students: 0, cxos };
-      else statsMap[location].cxos = cxos;
+      const normalizedLoc = normalizeLocation(location);
+      if (!normalizedLoc) return;
+      
+      if (!statsMap[normalizedLoc]) {
+        statsMap[normalizedLoc] = { location: normalizedLoc, students: 0, cxos };
+      } else {
+        statsMap[normalizedLoc].cxos += cxos;
+      }
     });
+    
+    // Convert to array and sort by total registrations
     const merged = Object.values(statsMap).sort((a, b) => (b.students + b.cxos) - (a.students + a.cxos));
+    
+    console.log("📍 Location stats:", merged);
     res.json(merged);
   } catch (err) {
     console.error("Error in /api/stats/registrations-by-location:", err);
@@ -64,9 +111,10 @@ app.get("/api/stats/registrations-by-location", async (req, res) => {
 
 // Test route to verify server is working
 app.get("/api/test", (req, res) => {
-  console.log("🧪 Test endpoint called");
   res.json({ message: "Backend server is working!", timestamp: new Date().toISOString() });
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);

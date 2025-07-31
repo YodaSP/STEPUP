@@ -9,7 +9,6 @@ const { deleteExecutive } = require("../controllers/executiveController");
 
 // Test route to verify executive routes are working
 router.get("/test", (req, res) => {
-  console.log("🧪 Executive test route called");
   res.json({ message: "Executive routes are working!", timestamp: new Date().toISOString() });
 });
 

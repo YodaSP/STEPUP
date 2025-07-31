@@ -2,6 +2,45 @@ import React, { useRef, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MumbaiIcon, DelhiIcon, BengaluruIcon, HyderabadIcon, ChennaiIcon, PuneIcon, KolkataIcon, KochiIcon, ChandigarhIcon, AhmedabadIcon } from './assets/CityIcons';
 
+// Custom hook for animated counter
+const useAnimatedCounter = (targetValue, duration = 2000, delay = 0) => {
+  const [count, setCount] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimating(true);
+      const startTime = Date.now();
+      const startValue = 0;
+      
+      const animate = () => {
+        const currentTime = Date.now();
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+        
+        setCount(currentValue);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setCount(targetValue);
+          setIsAnimating(false);
+        }
+      };
+      
+      requestAnimationFrame(animate);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [targetValue, duration, delay]);
+
+  return { count, isAnimating };
+};
+
 const cardData = [
   {
     title: "I am a Student",
@@ -31,7 +70,7 @@ const cardData = [
 // Define a fixed array of 10 major cities with icon mapping
 const fixedCities = [
   { name: "Mumbai", icon: MumbaiIcon },
-  { name: "Delhi-NCR", icon: DelhiIcon },
+  { name: "Delhi", icon: DelhiIcon },
   { name: "Bengaluru", icon: BengaluruIcon },
   { name: "Hyderabad", icon: HyderabadIcon },
   { name: "Chandigarh", icon: ChandigarhIcon },
@@ -74,13 +113,30 @@ const HomePage = () => {
   const [showTrendingHeading, setShowTrendingHeading] = useState(false);
   const [showCitiesPanel, setShowCitiesPanel] = useState(false);
   const citiesPanelRef = useRef(null);
+  
+  // Animated counters for stats
+  const studentsCount = useAnimatedCounter(25000, 3500, 500); // 25k students, 3.5s duration, 0.5s delay
+  const cxosCount = useAnimatedCounter(10000, 4000, 1000); // 10k CXOs, 4s duration, 1s delay
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/stats/registrations-by-location")
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/stats/registrations-by-location");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         setStats(data);
-      });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        // Set empty stats array as fallback
+        setStats([]);
+      }
+    };
+
+    // Add a small delay to ensure backend is ready
+    setTimeout(fetchStats, 200);
+    
     const timer = setTimeout(() => setShowTrendingHeading(true), 1000);
     return () => clearTimeout(timer);
   }, []);
@@ -173,11 +229,19 @@ const HomePage = () => {
                 Empowering students and executives to take their careers to the next level.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-8">
-                <span className="bg-blue-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800">
-                  🎓 <strong>25,000+</strong> Students Registered
+                <span className={`bg-blue-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800 transition-all duration-300 ${
+                  studentsCount.isAnimating ? 'scale-105 shadow-lg' : ''
+                }`}>
+                  🎓 <strong className="text-blue-700 transition-all duration-200">
+  {studentsCount.count.toLocaleString()}+
+    </strong>Students Registered
                 </span>
-                <span className="bg-green-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800">
-                  🧑‍💼 <strong>10,000+</strong> CXOs Onboarded
+                <span className={`bg-green-100 rounded-full px-5 py-2 text-base sm:text-lg font-semibold text-gray-800 transition-all duration-300 ${
+                  cxosCount.isAnimating ? 'scale-105 shadow-lg' : ''
+                }`}>
+                  🧑‍💼 <strong className="text-green-700 transition-all duration-200">
+  {cxosCount.count.toLocaleString()}+
+</strong>CXOs Onboarded
                 </span>
               </div>
               {/* Trending Cities Horizontal Tile */}

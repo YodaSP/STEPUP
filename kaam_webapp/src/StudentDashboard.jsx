@@ -14,7 +14,7 @@ const indianStates = [
   'Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Odisha', 'Punjab', 'Rajasthan', 'Tamil Nadu', 'Telangana', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Others'
 ];
 const citiesByState = {
-  'Delhi': ['New Delhi'],
+  'Delhi': ['delhi'],
   'Maharashtra': ['Mumbai', 'Pune', 'Nagpur'],
   'Karnataka': ['Bangalore', 'Mysore'],
   'Tamil Nadu': ['Chennai', 'Coimbatore'],
