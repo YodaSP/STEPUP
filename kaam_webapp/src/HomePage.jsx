@@ -64,6 +64,7 @@ const cardData = [
     button: "Register as Employer →",
     color: "purple",
     route: "/employer-register",
+    disabled: true, // Under construction
   },
 ];
 
@@ -113,6 +114,7 @@ const HomePage = () => {
   const [showTrendingHeading, setShowTrendingHeading] = useState(false);
   const [showCitiesPanel, setShowCitiesPanel] = useState(false);
   const citiesPanelRef = useRef(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   
   // Animated counters for stats
   const studentsCount = useAnimatedCounter(25000, 3500, 500); // 25k students, 3.5s duration, 0.5s delay
@@ -157,6 +159,14 @@ const HomePage = () => {
     );
     if (citiesPanelRef.current) observer.observe(citiesPanelRef.current);
     return () => observer.disconnect();
+  }, []);
+
+  // Show a back-to-top button after scrolling a bit
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   const handleRegisterClick = () => {
@@ -208,11 +218,11 @@ const HomePage = () => {
         </header>
 
         {/* Spacer to avoid content hiding behind fixed header */}
-        <div className="h-16 sm:h-20" />
+        <div className="h-24 sm:h-20" />
 
         {/* Hero Section with Map and Stats */}
-        {/* 1. Hero section at the top (increased padding, larger elements) */}
-        <section className="min-h-screen h-[90vh] flex flex-col justify-center items-center w-full relative overflow-hidden">
+        {/* Use 100svh for correct height in mobile browsers (accounts for URL bar) */}
+        <section className="min-h-[100svh] flex flex-col justify-center items-center w-full relative overflow-hidden">
           <div className="animated-hero-bg" />
           <div className="blobs-bg">
             <div className="blob blob1" />
@@ -359,13 +369,13 @@ const HomePage = () => {
                   {cardData.map((card) => (
                     <div
                       key={card.title}
-                      onClick={() => navigate(card.route)}
+                      onClick={card.disabled ? undefined : () => navigate(card.route)}
                       className={`
                         cursor-pointer rounded-2xl sm:rounded-3xl bg-white/90 p-6 sm:p-8 flex flex-col justify-between items-center h-full
-                        shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-300 border-2
+                        shadow-xl ${card.disabled ? '' : 'hover:scale-105 hover:shadow-2xl'} transition-all duration-300 border-2
                         border-transparent hover:border-${card.color}-500
                         text-gray-800 transform hover:-translate-y-1
-                        min-h-[320px]
+                        min-h-[320px] ${card.disabled ? 'opacity-60 cursor-not-allowed' : ''}
                       `}
                     >
                       <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 text-center">
@@ -381,9 +391,16 @@ const HomePage = () => {
                           text-white shadow transition-all duration-200
                           min-h-[48px] whitespace-nowrap
                         `}
+                        disabled={!!card.disabled}
                       >
                         {card.button}
                       </button>
+                      {card.disabled && (
+                        <span className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 rounded-full px-3 py-1">
+                          <span className="text-lg leading-none">🚧</span>
+                          Under construction
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -392,6 +409,15 @@ const HomePage = () => {
           </section>
         )}
       </div>
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 bg-gray-900 text-white rounded-full shadow-lg px-3 py-3 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900"
+          aria-label="Scroll to top"
+        >
+          ↑
+        </button>
+      )}
       {/* Footer - Responsive */}
       <footer className="bg-white border-t border-gray-200 text-xs sm:text-sm text-gray-500 text-center py-4 sm:py-6 mt-auto">
         <div className="container-responsive">
