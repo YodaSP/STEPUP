@@ -695,6 +695,10 @@ const CXODashboard = () => {
                   <label className="text-xs font-semibold text-gray-600 mb-1">Specialization</label>
                   <input type="text" className="border border-gray-300 rounded px-3 py-2 text-sm" value={editForm.specialization || ""} onChange={e => setEditForm(f => ({ ...f, specialization: e.target.value }))} />
                 </div>
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-gray-600 mb-1">Additional Certifications</label>
+                  <textarea className="border border-gray-300 rounded px-3 py-2 text-sm" rows="3" value={editForm.additionalCertifications || ""} onChange={e => setEditForm(f => ({ ...f, additionalCertifications: e.target.value }))} placeholder="e.g., PMP, AWS Certified, etc." />
+                </div>
               </div>
             </div>
 
@@ -829,14 +833,27 @@ const CXODashboard = () => {
                     </div>
                     <div className="flex flex-col">
                       <label className="text-xs font-semibold text-gray-600 mb-1">City</label>
-                      <input
-                        type="text"
-                        value={editForm.city || ''}
-                        onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm"
-                        placeholder="Enter your city"
-                        required
-                      />
+                      {editForm.state === 'Others' ? (
+                        <input
+                          type="text"
+                          value={editForm.otherCity || ''}
+                          onChange={e => setEditForm(f => ({ ...f, otherCity: e.target.value }))}
+                          className="border border-gray-300 rounded px-3 py-2 text-sm"
+                          placeholder="Enter your city"
+                          required
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          list="city-list"
+                          value={editForm.city || ''}
+                          onChange={e => setEditForm(f => ({ ...f, city: e.target.value, otherCity: '' }))}
+                          className="border border-gray-300 rounded px-3 py-2 text-sm"
+                          placeholder="Type or select your city"
+                          required
+                          disabled={!editForm.state}
+                        />
+                      )}
                     </div>
                   </>
                 ) : (
@@ -854,6 +871,11 @@ const CXODashboard = () => {
                 )}
               </div>
             </div>
+            <datalist id="city-list">
+              {(citiesByState[editForm.state] || []).map(city => (
+                <option key={city} value={city} />
+              ))}
+            </datalist>
             
             {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-end mt-8 border-t pt-6">
