@@ -16,6 +16,8 @@ const employerSchema = new mongoose.Schema({
   authMethod: { type: String, enum: ['google', 'password'], default: 'google' },
   isEmailVerified: { type: Boolean, default: false },
   lastLogin: { type: Date },
+  resetCode: { type: String, default: null },
+  resetCodeExpiry: { type: Date, default: null }
 }, {
   timestamps: true,
 });

@@ -80,6 +80,8 @@ const StudentForm = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     country: 'IN',
     otherCountry: '',
     countryCode: "+91",
@@ -115,6 +117,16 @@ const StudentForm = () => {
     const errs = {};
     if (!formData.fullName.trim() || formData.fullName.length < 2) errs.fullName = "Full Name is required (min 2 chars)";
     if (!validateEmail(formData.email)) errs.email = "Valid email required";
+    
+    // Password validation (only for new registrations, not for edits)
+    if (!isEditMode) {
+      if (!formData.password) errs.password = "Password is required";
+      if (!formData.confirmPassword) errs.confirmPassword = "Please confirm your password";
+      else if (formData.password !== formData.confirmPassword) {
+        errs.confirmPassword = "Passwords do not match";
+      }
+    }
+    
     if (!formData.country) errs.country = 'Country is required';
     if (formData.country === 'OTHERS' && !formData.otherCountry.trim()) errs.country = 'Please specify your country';
     if (formData.country === 'IN') {
@@ -261,6 +273,16 @@ const StudentForm = () => {
       if (currentStep === 1) {
         if (!formData.fullName.trim() || formData.fullName.length < 2) errs.fullName = "Full Name is required (min 2 chars)";
         if (!validateEmail(formData.email)) errs.email = "Valid email required";
+        
+        // Add password validation for new registrations
+        if (!isEditMode) {
+          if (!formData.password) errs.password = "Password is required";
+          if (!formData.confirmPassword) errs.confirmPassword = "Please confirm your password";
+          else if (formData.password !== formData.confirmPassword) {
+            errs.confirmPassword = "Passwords do not match";
+          }
+        }
+        
         if (!formData.country) errs.country = 'Country is required';
         if (formData.country === 'OTHERS' && !formData.otherCountry.trim()) errs.country = 'Please specify your country';
         if (formData.country === 'IN') {
@@ -299,7 +321,7 @@ const StudentForm = () => {
   // Add step-specific validation
   const stepValid = () => {
     if (currentStep === 1) {
-      return (
+      const basicValid = (
         formData.fullName.trim().length >= 2 &&
         validateEmail(formData.email) &&
         formData.country &&
@@ -310,6 +332,16 @@ const StudentForm = () => {
           ? formData.state && (formData.state !== 'Others' ? formData.city : formData.otherState && formData.otherCity)
           : formData.currentLocation.trim())
       );
+      
+      // Add password validation for new registrations
+      if (!isEditMode) {
+        return basicValid && 
+          formData.password && 
+          formData.confirmPassword &&
+          formData.password === formData.confirmPassword;
+      }
+      
+      return basicValid;
     }
     if (currentStep === 2) {
       return (
@@ -429,6 +461,40 @@ const StudentForm = () => {
                   />
                   {errors.email && <span className="text-red-600 text-xs">{errors.email}</span>}
                 </div>
+                
+                {/* Password fields - only show for new registrations */}
+                {!isEditMode && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
+                        required
+                      />
+                      {errors.password && <span className="text-red-600 text-xs">{errors.password}</span>}
+                      <p className="text-xs text-gray-500">Must be at least 8 characters with uppercase, lowercase, and number</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Confirm Password</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
+                        required
+                      />
+                      {errors.confirmPassword && <span className="text-red-600 text-xs">{errors.confirmPassword}</span>}
+                    </div>
+                  </>
+                )}
                 
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Phone Number</label>

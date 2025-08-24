@@ -26,9 +26,9 @@ const studentSchema = new mongoose.Schema({
   // Authentication fields
   googleId: { type: String, sparse: true },
   password: { type: String },
-  authMethod: { type: String, enum: ['google', 'password'], default: 'google' },
+  authMethod: { type: String, enum: ['google', 'password', 'both'], default: 'google' },
   isEmailVerified: { type: Boolean, default: false },
-  lastLogin: { type: Date },
+  lastLogin: { type: Date }
 }, {
   timestamps: true,
 });

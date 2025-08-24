@@ -26,62 +26,41 @@ const CXOLogin = () => {
       setIsLoading(true);
       setError("");
 
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log("Google login successful:", decoded);
-
-      // Send Google credential to backend
       const response = await fetch("http://localhost:5000/api/auth/executive/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          idToken: credentialResponse.credential,
+          credential: credentialResponse.credential,
         }),
       });
 
       const data = await response.json();
 
-              if (data.success) {
-          // Store token and user data
-          localStorage.setItem("cxoToken", data.token);
-          localStorage.setItem("cxoData", JSON.stringify(data.user));
-          localStorage.setItem("cxoEmail", data.user.email);
-          
-          // Store profile data if available
-          if (data.user.profile) {
-            localStorage.setItem("cxoProfile", JSON.stringify(data.user.profile));
+      if (data.success) {
+        // Store token and user data
+        localStorage.setItem("cxoToken", data.token);
+        localStorage.setItem("cxoData", JSON.stringify(data.user));
+        localStorage.setItem("cxoEmail", data.user.email);
+        localStorage.setItem("cxoProfile", JSON.stringify(data.user.profile));
+        
+        // Redirect to dashboard
+        navigate("/cxo-dashboard");
+      } else if (data.userNotFound) {
+        // User not found - redirect to registration not found page
+        navigate("/registration-not-found", { 
+          state: { 
+            userType: "executive",
+            email: data.user.email,
+            fullName: data.user.fullName
           }
-          
-          if (data.user.isNewUser) {
-            // Redirect to complete profile if new user
-            navigate("/executive-register", { 
-              state: { 
-                isNewUser: true, 
-                email: data.user.email,
-                fullName: data.user.fullName,
-                token: data.token 
-              } 
-            });
-          } else {
-            // Redirect to dashboard if existing user
-            navigate("/cxo-dashboard");
-          }
-        } else if (data.userNotFound) {
-          // Redirect to registration not found page
-          navigate("/registration-not-found", {
-            state: {
-              userType: "executive",
-              email: data.user.email,
-              fullName: data.user.fullName
-            }
-          });
-        } else {
-          setError(data.message || "Google authentication failed");
-        }
+        });
+      } else {
+        setError(data.message || "Login failed");
+      }
     } catch (error) {
-      console.error("Google login error:", error);
-      setError("Google authentication failed. Please try again.");
+      setError("An error occurred during login");
     } finally {
       setIsLoading(false);
     }
@@ -199,22 +178,22 @@ const CXOLogin = () => {
                 />
               </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm sm:text-base font-semibold text-gray-700">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
-                  required
-                />
-              </div>
+                             {/* Password Field */}
+               <div className="space-y-2">
+                 <label htmlFor="password" className="text-sm sm:text-base font-semibold text-gray-700">
+                   Password
+                 </label>
+                 <input
+                   type="password"
+                   id="password"
+                   name="password"
+                   value={formData.password}
+                   onChange={handleChange}
+                   placeholder="Enter your password"
+                   className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                   required
+                 />
+               </div>
 
               {/* Error Message */}
               {error && (
@@ -247,6 +226,9 @@ const CXOLogin = () => {
               </p>
               <p className="text-green-800 text-sm sm:text-base text-center mt-2">
                 <strong>Existing users:</strong> Use Google Sign-In or your password
+              </p>
+              <p className="text-green-800 text-sm sm:text-base text-center mt-2">
+                <strong>Forgot password?</strong> Use Google Sign-In to access your account and change password from your profile
               </p>
             </div>
 

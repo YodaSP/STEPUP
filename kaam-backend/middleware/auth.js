@@ -27,14 +27,21 @@ const authenticateToken = (req, res, next) => {
 // Middleware to verify Google ID token
 const verifyGoogleToken = async (req, res, next) => {
   try {
-    const { idToken } = req.body;
+    console.log('🔍 Google OAuth Debug - Request body:', req.body);
+    console.log('🔍 Google OAuth Debug - Request headers:', req.headers);
+    console.log('🔍 Google OAuth Debug - GOOGLE_CLIENT_ID:', GOOGLE_CLIENT_ID);
     
-    if (!idToken) {
+    // Try different possible field names
+    const credential = req.body.credential || req.body.idToken || req.body.token;
+    
+    if (!credential) {
+      console.log('❌ Google OAuth Debug - No credential found in request body');
+      console.log('❌ Google OAuth Debug - Available fields:', Object.keys(req.body));
       return res.status(400).json({ message: 'Google ID token required' });
     }
 
     const ticket = await client.verifyIdToken({
-      idToken,
+      idToken: credential,
       audience: GOOGLE_CLIENT_ID,
     });
 

@@ -26,17 +26,13 @@ const EmployerLogin = () => {
       setIsLoading(true);
       setError("");
 
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log("Google login successful:", decoded);
-
-      // Send Google credential to backend
       const response = await fetch("http://localhost:5000/api/auth/employer/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          idToken: credentialResponse.credential,
+          credential: credentialResponse.credential,
         }),
       });
 
@@ -47,41 +43,24 @@ const EmployerLogin = () => {
         localStorage.setItem("employerToken", data.token);
         localStorage.setItem("employerData", JSON.stringify(data.user));
         localStorage.setItem("employerEmail", data.user.email);
+        localStorage.setItem("employerProfile", JSON.stringify(data.user.profile));
         
-        // Store profile data if available
-        if (data.user.profile) {
-          localStorage.setItem("employerProfile", JSON.stringify(data.user.profile));
-        }
-        
-        if (data.user.isNewUser) {
-          // Redirect to complete profile if new user
-          navigate("/employer-register", { 
-            state: { 
-              isNewUser: true, 
-              email: data.user.email,
-              fullName: data.user.fullName,
-              token: data.token 
-            } 
-          });
-        } else {
-          // Redirect to dashboard if existing user
-          navigate("/employer-dashboard");
-        }
+        // Redirect to dashboard
+        navigate("/employer-dashboard");
       } else if (data.userNotFound) {
-        // Redirect to registration not found page
-        navigate("/registration-not-found", {
-          state: {
+        // User not found - redirect to registration not found page
+        navigate("/registration-not-found", { 
+          state: { 
             userType: "employer",
             email: data.user.email,
             fullName: data.user.fullName
           }
         });
       } else {
-        setError(data.message || "Google authentication failed");
+        setError(data.message || "Login failed");
       }
     } catch (error) {
-      console.error("Google login error:", error);
-      setError("Google authentication failed. Please try again.");
+      setError("An error occurred during login");
     } finally {
       setIsLoading(false);
     }

@@ -38,8 +38,8 @@ const SetPassword = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
+    if (!formData.password) {
+      setError("Password is required");
       return;
     }
 
@@ -143,9 +143,8 @@ const SetPassword = () => {
                   placeholder="Enter your password"
                   className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
                   required
-                  minLength="8"
                 />
-                <p className="text-sm text-gray-500">Minimum 8 characters</p>
+                <p className="text-sm text-gray-500">Enter your desired password</p>
               </div>
 
               {/* Confirm Password Field */}
@@ -162,7 +161,6 @@ const SetPassword = () => {
                   placeholder="Confirm your password"
                   className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
                   required
-                  minLength="8"
                 />
               </div>
 
