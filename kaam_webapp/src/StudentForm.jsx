@@ -8,8 +8,22 @@ const StudentForm = () => {
   const navigate = useNavigate();
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    // Check if this is a new Google auth user
+    if (location.state?.isNewUser) {
+      const { email, fullName, token } = location.state;
+      setFormData(prev => ({
+        ...prev,
+        email: email || "",
+        fullName: fullName || "",
+      }));
+      // Store the token for later use
+      if (token) {
+        localStorage.setItem("studentToken", token);
+      }
+    }
     // If on /student-edit, pre-fill form with studentData
-    if (location.pathname === "/student-edit") {
+    else if (location.pathname === "/student-edit") {
       const stored = localStorage.getItem("studentData");
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -25,7 +39,7 @@ const StudentForm = () => {
         navigate("/student-dashboard");
       }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, location.state]);
   
   // Add validation helpers
   const validateEmail = (email) => /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email);

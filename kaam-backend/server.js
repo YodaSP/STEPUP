@@ -6,6 +6,7 @@ const path = require("path");
 const studentRoutes = require("./routes/studentRoutes");
 const executiveRoutes = require("./routes/executiveRoutes");
 const employerRoutes = require("./routes/employerRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 
 
@@ -27,6 +28,7 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 app.use("/api/students", studentRoutes);
 app.use("/api/executives", executiveRoutes);
 app.use("/api/employers", employerRoutes);
+app.use("/api/auth", authRoutes);
 
 // Combined stats endpoint for frontend trending panel
 app.get("/api/stats/registrations-by-location", async (req, res) => {
