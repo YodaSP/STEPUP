@@ -35,8 +35,7 @@ const executiveSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for efficient queries
-executiveSchema.index({ email: 1 });
+// Index for efficient queries (email already has unique index from unique: true)
 executiveSchema.index({ googleId: 1 });
 
 module.exports = mongoose.model("Executive", executiveSchema);

@@ -22,8 +22,7 @@ const employerSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for efficient queries
-employerSchema.index({ email: 1 });
+// Index for efficient queries (email already has unique index from unique: true)
 employerSchema.index({ googleId: 1 });
 
 module.exports = mongoose.model("Employer", employerSchema);

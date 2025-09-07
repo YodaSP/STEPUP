@@ -3,62 +3,76 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const studentRoutes = require("./routes/studentRoutes");
 const executiveRoutes = require("./routes/executiveRoutes");
 const employerRoutes = require("./routes/employerRoutes");
 const authRoutes = require("./routes/authRoutes");
 
-
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve static files
+// Security middleware
+app.use(helmet());
 
-// MongoDB Atlas connection
-const mongoURI = process.env.MONGODB_URI || "mongodb+srv://admin:admin@cluster0.a63tul9.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Cluster0";
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || process.env.NODE_ENV === 'production' ? false : true,
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// MongoDB connection with improved configuration
+const mongoURI = process.env.MONGODB_URI || "mongodb+srv://stepupmeshlinks:stepupmeshlinks%231305@stepup.xwectwc.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Stepup";
+
+const mongooseOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+};
+
+mongoose.connect(mongoURI, mongooseOptions)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
-
-// Test endpoint to verify environment variables
-app.get("/api/test-env", (req, res) => {
-  res.json({
-    googleClientId: process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set',
-    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Not set',
-    jwtSecret: process.env.JWT_SECRET ? 'Set' : 'Not set',
-    mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set',
-    googleClientIdValue: process.env.GOOGLE_CLIENT_ID || 'Not set'
+  .catch((err) => {
+    console.error("❌ MongoDB error:", err);
+    process.exit(1);
   });
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Received SIGINT. Graceful shutdown...');
+  await mongoose.connection.close();
+  process.exit(0);
 });
 
-// Test Google OAuth endpoint
-app.post("/api/test-google-oauth", async (req, res) => {
-  try {
-    console.log('🔍 Test Google OAuth - Request body:', req.body);
-    const { credential } = req.body;
-    
-    if (!credential) {
-      return res.status(400).json({ 
-        error: 'No credential provided',
-        receivedBody: req.body,
-        availableFields: Object.keys(req.body)
-      });
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Credential received successfully',
-      credentialLength: credential.length
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM. Graceful shutdown...');
+  await mongoose.connection.close();
+  process.exit(0);
 });
+
 
 // Routes
 app.use("/api/students", studentRoutes);
@@ -139,7 +153,6 @@ app.get("/api/stats/registrations-by-location", async (req, res) => {
     // Convert to array and sort by total registrations
     const merged = Object.values(statsMap).sort((a, b) => (b.students + b.cxos) - (a.students + a.cxos));
     
-    console.log("📍 Location stats:", merged);
     res.json(merged);
   } catch (err) {
     console.error("Error in /api/stats/registrations-by-location:", err);
@@ -148,9 +161,6 @@ app.get("/api/stats/registrations-by-location", async (req, res) => {
 });
 
 // Test route to verify server is working
-app.get("/api/test", (req, res) => {
-  res.json({ message: "Backend server is working!", timestamp: new Date().toISOString() });
-});
 
 
 
