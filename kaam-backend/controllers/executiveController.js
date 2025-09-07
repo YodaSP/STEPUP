@@ -1,11 +1,16 @@
 const Executive = require("../models/Executive");
+const bcrypt = require("bcryptjs");
 
 const registerExecutive = async (req, res) => {
   try {
+    console.log('🔍 Executive Registration Debug - Request body:', req.body);
+    console.log('🔍 Executive Registration Debug - Files:', req.files);
+    
     const {
       // Section 1: Personal Information
       fullName,
       email,
+      password,
       phone,
       country,
       otherCountry,
@@ -56,8 +61,76 @@ const registerExecutive = async (req, res) => {
     } = req.body;
 
     // Basic validation for required fields
+    console.log('🔍 Executive Registration Debug - Validating required fields...');
+    console.log('🔍 Executive Registration Debug - fullName:', fullName);
+    console.log('🔍 Executive Registration Debug - email:', email);
+    console.log('🔍 Executive Registration Debug - phone:', phone);
+    console.log('🔍 Executive Registration Debug - currentLocation:', currentLocation);
+    console.log('🔍 Executive Registration Debug - password:', password ? 'provided' : 'missing');
+    
     if (!fullName || !email || !phone || !currentLocation) {
+      console.log('❌ Executive Registration Debug - Basic validation failed');
       return res.status(400).json({ message: "Name, email, phone, and location are required fields." });
+    }
+    
+    // Password validation - simplified (no strict requirements)
+    if (!password) {
+      console.log('❌ Executive Registration Debug - Password validation failed');
+      return res.status(400).json({ message: "Password is required" });
+    }
+    
+    // Additional required field validations based on the Executive model
+    console.log('🔍 Executive Registration Debug - Validating additional required fields...');
+    console.log('🔍 Executive Registration Debug - dateOfBirth:', dateOfBirth);
+    console.log('🔍 Executive Registration Debug - currentDesignation:', currentDesignation);
+    console.log('🔍 Executive Registration Debug - totalYearsExperience:', totalYearsExperience);
+    console.log('🔍 Executive Registration Debug - careerObjective:', careerObjective);
+    console.log('🔍 Executive Registration Debug - highestQualification:', highestQualification);
+    console.log('🔍 Executive Registration Debug - institutionName:', institutionName);
+    console.log('🔍 Executive Registration Debug - company:', company);
+    console.log('🔍 Executive Registration Debug - position:', position);
+    console.log('🔍 Executive Registration Debug - industry:', industry);
+    console.log('🔍 Executive Registration Debug - resume file:', req.files?.resume?.[0] ? 'provided' : 'missing');
+    
+    if (!dateOfBirth || dateOfBirth.trim() === '') {
+      console.log('❌ Executive Registration Debug - Date of birth validation failed');
+      return res.status(400).json({ message: "Date of birth is required" });
+    }
+    if (!currentDesignation || currentDesignation.trim() === '') {
+      console.log('❌ Executive Registration Debug - Current designation validation failed');
+      return res.status(400).json({ message: "Current designation is required" });
+    }
+    if (!totalYearsExperience || totalYearsExperience.trim() === '') {
+      console.log('❌ Executive Registration Debug - Total years experience validation failed');
+      return res.status(400).json({ message: "Total years of experience is required" });
+    }
+    if (!careerObjective || careerObjective.trim() === '') {
+      console.log('❌ Executive Registration Debug - Career objective validation failed');
+      return res.status(400).json({ message: "Career objective is required" });
+    }
+    if (!highestQualification || highestQualification.trim() === '') {
+      console.log('❌ Executive Registration Debug - Highest qualification validation failed');
+      return res.status(400).json({ message: "Highest qualification is required" });
+    }
+    if (!institutionName || institutionName.trim() === '') {
+      console.log('❌ Executive Registration Debug - Institution name validation failed');
+      return res.status(400).json({ message: "Institution name is required" });
+    }
+    if (!company || company.trim() === '') {
+      console.log('❌ Executive Registration Debug - Company validation failed');
+      return res.status(400).json({ message: "Company is required" });
+    }
+    if (!position || position.trim() === '') {
+      console.log('❌ Executive Registration Debug - Position validation failed');
+      return res.status(400).json({ message: "Position is required" });
+    }
+    if (!industry || industry.trim() === '') {
+      console.log('❌ Executive Registration Debug - Industry validation failed');
+      return res.status(400).json({ message: "Industry is required" });
+    }
+    if (!req.files?.resume?.[0]) {
+      console.log('❌ Executive Registration Debug - Resume file validation failed');
+      return res.status(400).json({ message: "Resume file is required" });
     }
 
     // Parse work experience if it's a string
@@ -81,11 +154,16 @@ const registerExecutive = async (req, res) => {
     const resumePath = req.files?.resume?.[0]?.path || null;
     const photoPath = req.files?.photo?.[0]?.path || null;
 
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const executive = new Executive({
       // Section 1: Personal Information
       fullName,
       email,
       phone,
+      password: hashedPassword,
       country,
       otherCountry,
       state,
@@ -136,13 +214,23 @@ const registerExecutive = async (req, res) => {
       // Files
       resume: resumePath,
       photo: photoPath,
+      
+      // Authentication fields
+      authMethod: 'password',
+      isEmailVerified: true, // Since they're registering with password
     });
 
     await executive.save();
+    console.log('✅ Executive Registration Debug - Executive saved successfully!');
 
     res.status(201).json({ message: "Executive registered successfully!" });
   } catch (error) {
     console.error("❌ Executive registration failed:", error);
+    console.error("❌ Executive Registration Debug - Error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -225,6 +313,22 @@ const updateExecutive = async (req, res) => {
     const { id } = req.params;
     const update = { ...req.body };
     
+    console.log('🔍 Update Executive Debug - ID:', id);
+    console.log('🔍 Update Executive Debug - Request body:', req.body);
+    console.log('🔍 Update Executive Debug - Update object:', update);
+    
+    // Handle password update if provided
+    if (update.password && update.password.trim() !== '') {
+      console.log('🔍 Update Executive Debug - Password provided, hashing...');
+      const saltRounds = 12;
+      update.password = await bcrypt.hash(update.password, saltRounds);
+      update.authMethod = 'both'; // Allow both Google and password after setting password
+      console.log('🔍 Update Executive Debug - Password hashed, authMethod set to both');
+    } else if (update.password === '') {
+      console.log('🔍 Update Executive Debug - Empty password, removing from update');
+      delete update.password; // Don't update password if empty
+    }
+    
     // Handle file uploads
     if (req.files?.resume) {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {
@@ -272,15 +376,22 @@ const updateExecutive = async (req, res) => {
       return res.status(400).json({ message: "Resume (PDF) is required." });
     }
 
+    console.log('🔍 Update Executive Debug - Final update object:', update);
+
     // Allow updating all new fields
-    const updated = await Executive.findByIdAndUpdate(id, update, { new: true });
+    const updated = await Executive.findByIdAndUpdate(id, update, { new: true, runValidators: false });
     if (!updated) {
       return res.status(404).json({ message: "Executive not found" });
     }
+    console.log('🔍 Update Executive Debug - Executive updated successfully');
     res.status(200).json(updated);
   } catch (error) {
-    console.error("Error updating executive:", error);
-    res.status(500).json({ message: "Failed to update executive" });
+    console.error("❌ Error updating executive:", error);
+    console.error("❌ Error details:", error.message);
+    if (error.name === 'ValidationError') {
+      console.error("❌ Validation errors:", error.errors);
+    }
+    res.status(500).json({ message: "Failed to update executive", error: error.message });
   }
 };
 

@@ -91,6 +91,8 @@ const ExecutiveForm = () => {
     // Section 1: Personal Information
     fullName: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     country: 'IN',
     otherCountry: '',
     countryCode: "+91",
@@ -223,6 +225,16 @@ const ExecutiveForm = () => {
     if (currentStep === 1) {
       if (!formData.fullName.trim() || formData.fullName.length < 2) errs.fullName = "Full Name is required (min 2 chars)";
       if (!validateEmail(formData.email)) errs.email = "Valid email required";
+      
+      // Password validation (only for new registrations, not for edits)
+      if (!isEditMode) {
+        if (!formData.password) errs.password = "Password is required";
+        if (!formData.confirmPassword) errs.confirmPassword = "Please confirm your password";
+        else if (formData.password !== formData.confirmPassword) {
+          errs.confirmPassword = "Passwords do not match";
+        }
+      }
+      
       if (!formData.country) errs.country = 'Country is required';
       if (formData.country === 'OTHERS' && !formData.otherCountry.trim()) errs.country = 'Please specify your country';
       if (formData.country === 'IN') {
@@ -245,6 +257,9 @@ const ExecutiveForm = () => {
     if (currentStep === 2) {
       if (!formData.currentDesignation.trim()) errs.currentDesignation = "Current Designation is required";
       if (!formData.totalYearsExperience.trim()) errs.totalYearsExperience = "Years of Experience is required";
+      if (!formData.company.trim()) errs.company = "Company is required";
+      if (!formData.position.trim()) errs.position = "Position is required";
+      if (!formData.industry.trim()) errs.industry = "Industry is required";
     }
 
     // Step 3: Education
@@ -368,6 +383,39 @@ const ExecutiveForm = () => {
     setErrors(errs);
     if (Object.keys(errs).length > 0) {
       setStepWarning("Please fill all required fields correctly before proceeding.");
+      // Set errors for all fields in this step
+      const stepErrs = { ...errors };
+      if (currentStep === 1) {
+        if (!formData.fullName.trim() || formData.fullName.length < 2) stepErrs.fullName = "Full Name is required (min 2 chars)";
+        if (!validateEmail(formData.email)) stepErrs.email = "Valid email required";
+        
+        // Add password validation for new registrations
+        if (!isEditMode) {
+          if (!formData.password) stepErrs.password = "Password is required";
+          if (!formData.confirmPassword) stepErrs.confirmPassword = "Please confirm your password";
+          else if (formData.password !== formData.confirmPassword) {
+            stepErrs.confirmPassword = "Passwords do not match";
+          }
+        }
+        
+        if (!formData.country) stepErrs.country = 'Country is required';
+        if (formData.country === 'OTHERS' && !formData.otherCountry.trim()) stepErrs.country = 'Please specify your country';
+        if (formData.country === 'IN') {
+          if (!formData.countryCode) stepErrs.phone = "Country code required";
+          if (!/^\d{10}$/.test(formData.phone)) stepErrs.phone = "Phone must be exactly 10 digits";
+          if (!formData.state) stepErrs.state = 'State is required';
+          if (formData.state === 'Others') {
+            if (!formData.otherState.trim()) stepErrs.state = 'Please specify your state';
+            if (!formData.otherCity.trim()) stepErrs.city = 'Please specify your city';
+          } else {
+            if (!formData.city) stepErrs.city = 'City is required';
+            if (!formData.city.trim()) stepErrs.city = 'City is required';
+          }
+        } else {
+          if (!formData.currentLocation.trim()) stepErrs.currentLocation = 'Current Location is required';
+        }
+      }
+      setErrors(stepErrs);
       return;
     }
     setStepWarning("");
@@ -431,7 +479,7 @@ const ExecutiveForm = () => {
   // Add step-specific validation
   const stepValid = () => {
     if (currentStep === 1) {
-      return (
+      const basicValid = (
         formData.fullName.trim().length >= 2 &&
         validateEmail(formData.email) &&
         formData.country &&
@@ -442,11 +490,24 @@ const ExecutiveForm = () => {
           ? formData.state && (formData.state !== 'Others' ? formData.city : formData.otherState && formData.otherCity)
           : formData.currentLocation.trim())
       );
+      
+      // Add password validation for new registrations
+      if (!isEditMode) {
+        return basicValid && 
+          formData.password && 
+          formData.confirmPassword &&
+          formData.password === formData.confirmPassword;
+      }
+      
+      return basicValid;
     }
     if (currentStep === 2) {
       return (
         formData.currentDesignation.trim() !== "" &&
-        formData.totalYearsExperience.trim() !== ""
+        formData.totalYearsExperience.trim() !== "" &&
+        formData.company.trim() !== "" &&
+        formData.position.trim() !== "" &&
+        formData.industry.trim() !== ""
       );
     }
     if (currentStep === 3) {
@@ -580,6 +641,40 @@ const ExecutiveForm = () => {
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
+                
+                {/* Password fields - only show for new registrations */}
+                {!isEditMode && (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                        required
+                      />
+                      {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+                      <p className="text-xs text-gray-500">Must be at least 8 characters with uppercase, lowercase, and number</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Confirm Password</label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                        required
+                      />
+                      {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+                    </div>
+                  </>
+                )}
                 
                 {/* Date of Birth */}
                 <div className="space-y-2">
@@ -844,6 +939,48 @@ const ExecutiveForm = () => {
                     rows="4"
                     className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Company</label>
+                  <input
+                    type="text"
+                    name="company"
+                    placeholder="Current company name"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                    required
+                  />
+                  {errors.company && <p className="text-red-500 text-xs mt-1">{errors.company}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Position</label>
+                  <input
+                    type="text"
+                    name="position"
+                    placeholder="Current job title/position"
+                    value={formData.position}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                    required
+                  />
+                  {errors.position && <p className="text-red-500 text-xs mt-1">{errors.position}</p>}
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Industry</label>
+                  <input
+                    type="text"
+                    name="industry"
+                    placeholder="e.g., Technology, Healthcare, Finance"
+                    value={formData.industry}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all duration-200 text-base sm:text-lg"
+                    required
+                  />
+                  {errors.industry && <p className="text-red-500 text-xs mt-1">{errors.industry}</p>}
                 </div>
               </div>
               

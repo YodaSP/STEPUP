@@ -1,69 +1,42 @@
 const mongoose = require("mongoose");
 
-const ExecutiveSchema = new mongoose.Schema({
-  // Section 1: Personal Information
-  fullName: String,
-  email: String,
-  phone: String,
+const executiveSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Other' },
   country: { type: String, required: false },
   otherCountry: { type: String },
   state: { type: String, required: false },
   otherState: { type: String },
   city: { type: String, required: false },
   otherCity: { type: String },
-  currentLocation: String,
-  dateOfBirth: String,
-  maritalStatus: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed', 'Other'], default: 'Other' },
-  gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Other' },
-
-  // Section 2: Professional Information
-  currentDesignation: String, // Current job title
-  totalYearsExperience: String, // Total years of experience
-  linkedinProfile: String,
-  careerObjective: String, // Professional summary/objective
-
-  // Section 3: Education
-  highestQualification: String, // Bachelor's, Master's, MBA, etc.
-  institutionName: String, // University/College name
-  yearOfCompletion: String, // Graduation year
-  specialization: String, // Field of study/Major
-  additionalCertifications: String, // Professional certifications
-
-  // Section 4: Work Experience
-  workExperience: [{
-    companyName: String,
-    jobTitle: String,
-    startDate: String,
-    endDate: String, // or "Present"
-    keyResponsibilities: String,
-    majorAchievements: String
-  }],
-
-  // Section 5: Skills
-  technicalSkills: String,
-  softSkills: String,
-  toolsTechnologies: String,
-  languagesKnown: String,
-
-  // Section 6: Additional Information
-  awardsRecognition: String,
-  hobbiesInterests: String,
-  professionalMemberships: String,
-
-  // Legacy fields (keeping for backward compatibility)
-  position: String, // Alias for currentDesignation
-  company: String, // Current company
-  industry: String,
-  experience: String, // Alias for totalYearsExperience
-  preferredLocation: String,
-  skills: String, // Legacy skills field
-  department: String,
-
-  // Files
-  resume: String,
-  photo: String,
+  currentLocation: { type: String, required: true },
+  dateOfBirth: { type: String, required: true },
+  maritalStatus: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed'], default: 'Single' },
+  currentDesignation: { type: String, required: true },
+  totalYearsExperience: { type: String, required: true },
+  linkedinProfile: { type: String },
+  careerObjective: { type: String, required: true },
+  highestQualification: { type: String, required: true },
+  institutionName: { type: String, required: true },
+  company: { type: String, required: true },
+  position: { type: String, required: true },
+  industry: { type: String, required: true },
+  resume: { type: String, required: true },
+  photo: { type: String },
+  // Authentication fields
+  googleId: { type: String, sparse: true },
+  password: { type: String },
+  authMethod: { type: String, enum: ['google', 'password', 'both'], default: 'google' },
+  isEmailVerified: { type: Boolean, default: false },
+  lastLogin: { type: Date }
 }, {
   timestamps: true,
 });
 
-module.exports = mongoose.model("Executive", ExecutiveSchema);
+// Index for efficient queries
+executiveSchema.index({ email: 1 });
+executiveSchema.index({ googleId: 1 });
+
+module.exports = mongoose.model("Executive", executiveSchema);

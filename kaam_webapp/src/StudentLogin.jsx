@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 const StudentLogin = () => {
   const [formData, setFormData] = useState({
@@ -8,6 +10,7 @@ const StudentLogin = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,27 +22,96 @@ const StudentLogin = () => {
     setError(""); // Clear error when user types
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      console.log('🔍 Frontend Debug - credentialResponse:', credentialResponse);
+      
+      const requestBody = {
+        credential: credentialResponse.credential,
+      };
+      
+      console.log('🔍 Frontend Debug - Request body being sent:', requestBody);
+
+      const response = await fetch("http://localhost:5000/api/auth/student/google", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store token and user data
+        localStorage.setItem("studentToken", data.token);
+        localStorage.setItem("studentData", JSON.stringify(data.user));
+        localStorage.setItem("studentEmail", data.user.email);
+        localStorage.setItem("studentProfile", JSON.stringify(data.user.profile));
+        
+        // Redirect to dashboard
+        navigate("/student-dashboard");
+      } else if (data.userNotFound) {
+        // User not found - redirect to registration not found page
+        navigate("/registration-not-found", { 
+          state: { 
+            userType: "student",
+            email: data.user.email,
+            fullName: data.user.fullName
+          }
+        });
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (error) {
+      setError("An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google Sign-In failed. Please try again.");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     try {
-      // For demo purposes, accept any non-empty email and password
       if (formData.email.trim() && formData.password.trim()) {
-        // Store email in localStorage for demo
-        localStorage.setItem("studentEmail", formData.email);
-        
-        // Fetch student details from backend
-        const response = await fetch(`http://localhost:5000/api/students/email/${encodeURIComponent(formData.email)}`);
-        
-        if (response.ok) {
-          const studentData = await response.json();
-          localStorage.setItem("studentData", JSON.stringify(studentData));
+        // Try password-based login
+        const response = await fetch("http://localhost:5000/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            userType: "student",
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem("studentToken", data.token);
+          localStorage.setItem("studentData", JSON.stringify(data.user));
+          localStorage.setItem("studentEmail", data.user.email);
+          
+          // Store profile data if available
+          if (data.user.profile) {
+            localStorage.setItem("studentProfile", JSON.stringify(data.user.profile));
+          }
+          
           navigate("/student-dashboard");
         } else {
-          console.log("Student not found, but proceeding with demo login");
-          navigate("/student-dashboard");
+          setError(data.message || "Login failed");
         }
       } else {
         setError("Please enter both email and password");
@@ -69,6 +141,32 @@ const StudentLogin = () => {
 
           {/* Login Form */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8">
+            {/* Google Sign-In Button */}
+            <div className="mb-6">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                width="100%"
+                className="w-full"
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Password Login Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Email Field */}
               <div className="space-y-2">
@@ -87,22 +185,22 @@ const StudentLogin = () => {
                 />
               </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm sm:text-base font-semibold text-gray-700">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
-                  required
-                />
-              </div>
+                             {/* Password Field */}
+               <div className="space-y-2">
+                 <label htmlFor="password" className="text-sm sm:text-base font-semibold text-gray-700">
+                   Password
+                 </label>
+                 <input
+                   type="password"
+                   id="password"
+                   name="password"
+                   value={formData.password}
+                   onChange={handleChange}
+                   placeholder="Enter your password"
+                   className="w-full px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
+                   required
+                 />
+               </div>
 
               {/* Error Message */}
               {error && (
@@ -123,15 +221,21 @@ const StudentLogin = () => {
                     Signing In...
                   </span>
                 ) : (
-                  "Sign In"
+                  "Sign In with Password"
                 )}
               </button>
             </form>
 
-            {/* Demo Info */}
+            {/* Info Section */}
             <div className="mt-6 sm:mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-blue-800 text-sm sm:text-base text-center">
-                <strong>Demo:</strong> Enter any email and password to login
+                <strong>New users:</strong> Use Google Sign-In to create your account automatically
+              </p>
+              <p className="text-blue-800 text-sm sm:text-base text-center mt-2">
+                <strong>Existing users:</strong> Use Google Sign-In or your password
+              </p>
+              <p className="text-blue-800 text-sm sm:text-base text-center mt-2">
+                <strong>Forgot password?</strong> Use Google Sign-In to access your account and change password from your profile
               </p>
             </div>
 

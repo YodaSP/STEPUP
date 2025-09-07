@@ -1,4 +1,5 @@
 const Student = require("../models/Student");
+const bcrypt = require("bcryptjs");
 
 const registerStudent = async (req, res) => {
   try {
@@ -7,6 +8,7 @@ const registerStudent = async (req, res) => {
       fullName,
       email,
       phone,
+      password,
       country,
       otherCountry,
       state,
@@ -33,6 +35,12 @@ const registerStudent = async (req, res) => {
     if (!fullName || !email || !phone || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
       return res.status(400).json({ message: "All required fields must be provided, including gender." });
     }
+    
+    // Password validation - simplified (no strict requirements)
+    if (!password) {
+      return res.status(400).json({ message: "Password is required" });
+    }
+    
     // Defensive gender check
     const allowedGenders = ['Male', 'Female', 'Other'];
     if (!allowedGenders.includes(gender)) {
@@ -47,10 +55,15 @@ const registerStudent = async (req, res) => {
       return res.status(400).json({ message: "Profile photo must be an image." });
     }
 
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
     const student = new Student({
       fullName,
       email,
       phone,
+      password: hashedPassword,
       country,
       otherCountry,
       state,
@@ -70,6 +83,8 @@ const registerStudent = async (req, res) => {
       photo,
       linkedin,
       gender,
+      authMethod: 'password',
+      isEmailVerified: true, // Since they're registering with password
     });
 
     await student.save();
@@ -129,6 +144,23 @@ const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
     const update = { ...req.body };
+    
+    console.log('🔍 Update Student Debug - ID:', id);
+    console.log('🔍 Update Student Debug - Request body:', req.body);
+    console.log('🔍 Update Student Debug - Update object:', update);
+    
+    // Handle password update if provided
+    if (update.password && update.password.trim() !== '') {
+      console.log('🔍 Update Student Debug - Password provided, hashing...');
+      const saltRounds = 12;
+      update.password = await bcrypt.hash(update.password, saltRounds);
+      update.authMethod = 'both'; // Allow both Google and password after setting password
+      console.log('🔍 Update Student Debug - Password hashed, authMethod set to both');
+    } else if (update.password === '') {
+      console.log('🔍 Update Student Debug - Empty password, removing from update');
+      delete update.password; // Don't update password if empty
+    }
+    
     if (req.body.gender) update.gender = req.body.gender;
     // If files are present, add them
     if (req.files?.resume) {
@@ -143,15 +175,23 @@ const updateStudent = async (req, res) => {
       }
       update.photo = req.files.photo[0].path;
     }
+    
+    console.log('🔍 Update Student Debug - Final update object:', update);
+    
     // Allow updating all new fields
-    const updated = await Student.findByIdAndUpdate(id, update, { new: true });
+    const updated = await Student.findByIdAndUpdate(id, update, { new: true, runValidators: false });
     if (!updated) {
       return res.status(404).json({ message: "Student not found" });
     }
+    console.log('🔍 Update Student Debug - Student updated successfully');
     res.status(200).json(updated);
   } catch (error) {
-    console.error("Error updating student:", error);
-    res.status(500).json({ message: "Failed to update student" });
+    console.error("❌ Error updating student:", error);
+    console.error("❌ Error details:", error.message);
+    if (error.name === 'ValidationError') {
+      console.error("❌ Validation errors:", error.errors);
+    }
+    res.status(500).json({ message: "Failed to update student", error: error.message });
   }
 };
 

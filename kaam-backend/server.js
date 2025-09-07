@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -6,6 +7,7 @@ const path = require("path");
 const studentRoutes = require("./routes/studentRoutes");
 const executiveRoutes = require("./routes/executiveRoutes");
 const employerRoutes = require("./routes/employerRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 
 
@@ -18,15 +20,51 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve static files
 
 // MongoDB Atlas connection
-const mongoURI = "mongodb+srv://admin:admin@cluster0.a63tul9.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Cluster0";
+const mongoURI = process.env.MONGODB_URI || "mongodb+srv://admin:admin@cluster0.a63tul9.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Cluster0";
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
+
+// Test endpoint to verify environment variables
+app.get("/api/test-env", (req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set',
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? 'Set' : 'Not set',
+    jwtSecret: process.env.JWT_SECRET ? 'Set' : 'Not set',
+    mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set',
+    googleClientIdValue: process.env.GOOGLE_CLIENT_ID || 'Not set'
+  });
+});
+
+// Test Google OAuth endpoint
+app.post("/api/test-google-oauth", async (req, res) => {
+  try {
+    console.log('🔍 Test Google OAuth - Request body:', req.body);
+    const { credential } = req.body;
+    
+    if (!credential) {
+      return res.status(400).json({ 
+        error: 'No credential provided',
+        receivedBody: req.body,
+        availableFields: Object.keys(req.body)
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Credential received successfully',
+      credentialLength: credential.length
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Routes
 app.use("/api/students", studentRoutes);
 app.use("/api/executives", executiveRoutes);
 app.use("/api/employers", employerRoutes);
+app.use("/api/auth", authRoutes);
 
 // Combined stats endpoint for frontend trending panel
 app.get("/api/stats/registrations-by-location", async (req, res) => {

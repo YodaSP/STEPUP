@@ -29,6 +29,7 @@ const CXODashboard = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Add a default field template at the top of the component
   const defaultCXOFields = {
@@ -268,9 +269,19 @@ const CXODashboard = () => {
                 <button
                   className="btn-touch px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white font-bold rounded-full shadow-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
                   onClick={() => {
+                    console.log("🔍 Opening edit form with cxoData:", cxoData);
                     setEditForm(prev => {
                       const base = { ...defaultCXOFields, ...cxoData, ...prev };
-                      if (!base._id && cxoData && cxoData._id) base._id = cxoData._id;
+                      // Ensure the ID is properly set
+                      if (cxoData && cxoData.id) {
+                        base._id = cxoData.id;
+                        console.log("✅ Set _id from cxoData.id:", cxoData.id);
+                      } else if (cxoData && cxoData._id) {
+                        base._id = cxoData._id;
+                        console.log("✅ Set _id from cxoData._id:", cxoData._id);
+                      } else {
+                        console.warn("⚠️ No ID found in cxoData:", cxoData);
+                      }
                       const countryCode = countryList.find(opt =>
                         opt.code === base.country || opt.label === base.country
                       )?.code || 'IN';
@@ -281,6 +292,7 @@ const CXODashboard = () => {
                         if (!base.state) base.state = state || '';
                         if (!base.city) base.city = city || '';
                       }
+                      console.log("🔍 Final editForm base:", base);
                       return base;
                     });
                     setEditModalOpen(true);
@@ -523,64 +535,119 @@ const CXODashboard = () => {
         onRequestClose={() => setEditModalOpen(false)}
         contentLabel="Edit Profile"
         ariaHideApp={false}
-        className="fixed inset-0 flex items-center justify-center z-50"
+        className="fixed inset-0 flex items-center justify-center z-50 p-4"
         overlayClassName="fixed inset-0 bg-black bg-opacity-40 z-40"
       >
-        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-8 relative mt-12 mb-12 px-8 sm:px-16 max-h-[85vh] overflow-y-auto">
-          <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setEditModalOpen(false)}>&times;</button>
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Edit Executive Profile</h2>
+        <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-800">Edit Executive Profile</h2>
+            <button className="text-gray-400 hover:text-gray-700 text-xl" onClick={() => setEditModalOpen(false)}>&times;</button>
+          </div>
           
-          <form onSubmit={async e => {
-            e.preventDefault();
-            setEditLoading(true);
-            try {
-              const { _id, ...allFields } = editForm;
-              const execId = _id || (cxoData && cxoData._id);
-              if (!execId) {
-                alert('Error: Executive ID missing. Cannot update profile.');
-                setEditLoading(false);
-                return;
-              }
-              const data = new FormData();
-              for (let key in allFields) {
-                if (key === 'currentLocation') {
-                  if (allFields.country === 'IN') {
-                    let loc = allFields.state === 'Others' ? allFields.otherState : allFields.state;
-                    loc += ', ' + (allFields.state === 'Others' ? allFields.otherCity : allFields.city);
-                    data.append('currentLocation', loc);
-                  } else {
-                    data.append('currentLocation', allFields.currentLocation);
-                  }
-                } else if (key !== 'state' && key !== 'city' && key !== 'otherState' && key !== 'otherCity' && key !== 'otherCountry') {
-                  data.append(key, allFields[key] ?? '');
+                    <div className="flex-1 overflow-y-auto p-6">
+            <form id="edit-executive-form" onSubmit={async e => {
+              e.preventDefault();
+              setEditLoading(true);
+              try {
+                console.log("🔍 Form submission - editForm:", editForm);
+                console.log("🔍 Form submission - cxoData:", cxoData);
+                
+                const { _id, ...allFields } = editForm;
+                const execId = _id || (cxoData && cxoData._id) || (cxoData && cxoData.id);
+                
+                console.log("🔍 Extracted _id:", _id);
+                console.log("🔍 cxoData._id:", cxoData && cxoData._id);
+                console.log("🔍 cxoData.id:", cxoData && cxoData.id);
+                console.log("🔍 Final execId:", execId);
+                
+                if (!execId) {
+                  alert('Error: Executive ID missing. Cannot update profile.');
+                  setEditLoading(false);
+                  return;
                 }
+                const data = new FormData();
+                for (let key in allFields) {
+                  if (key === 'currentLocation') {
+                    if (allFields.country === 'IN') {
+                      let loc = allFields.state === 'Others' ? allFields.otherState : allFields.state;
+                      loc += ', ' + (allFields.state === 'Others' ? allFields.otherCity : allFields.city);
+                      data.append('currentLocation', loc);
+                    } else {
+                      data.append('currentLocation', allFields.currentLocation);
+                    }
+                  } else if (key !== 'state' && key !== 'city' && key !== 'otherState' && key !== 'otherCity' && key !== 'otherCountry') {
+                    data.append(key, allFields[key] ?? '');
+                  }
+                }
+                if (allFields.resume instanceof File) data.append('resume', allFields.resume);
+                if (allFields.photo instanceof File) data.append('photo', allFields.photo);
+                
+                // Use the new auth route for profile updates
+                const response = await fetch(`http://localhost:5000/api/auth/update-profile/executive/${execId}`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(Object.fromEntries(data)),
+                });
+                
+                if (response.ok) {
+                  const updated = await response.json();
+                  
+                  // If password was provided, update it separately
+                  if (allFields.password && allFields.password.trim()) {
+                    try {
+                      const passwordResponse = await fetch(`http://localhost:5000/api/auth/set-password`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          email: cxoData.email,
+                          password: allFields.password,
+                          userType: "executive"
+                        }),
+                      });
+                      
+                      if (passwordResponse.ok) {
+                        console.log("Password updated successfully");
+                      } else {
+                        const passwordError = await passwordResponse.text();
+                        console.warn("Password update failed:", passwordError);
+                      }
+                    } catch (passwordErr) {
+                      console.warn("Password update error:", passwordErr);
+                    }
+                  }
+                  
+                  // Refresh user data to get the latest information
+                  try {
+                    const refreshResponse = await fetch(`http://localhost:5000/api/auth/test-user-data/executive/${cxoData.email}`);
+                    if (refreshResponse.ok) {
+                      const refreshData = await refreshResponse.json();
+                      const newUserData = refreshData.testResponse.user;
+                      setCxoData(newUserData);
+                      localStorage.setItem("cxoData", JSON.stringify(newUserData));
+                    }
+                  } catch (refreshErr) {
+                    console.warn("Failed to refresh user data:", refreshErr);
+                  }
+                  
+                  setEditModalOpen(false);
+                  alert("Profile updated successfully!");
+                } else {
+                  const errorText = await response.text();
+                  alert("Failed to update profile: " + errorText);
+                }
+              } catch (err) {
+                alert("Error updating profile: " + err.message);
+              } finally {
+                setEditLoading(false);
               }
-              if (allFields.resume instanceof File) data.append('resume', allFields.resume);
-              if (allFields.photo instanceof File) data.append('photo', allFields.photo);
-              
-              const response = await fetch(`http://localhost:5000/api/executives/${execId}`, {
-                method: "PUT",
-                body: data,
-              });
-              
-              if (response.ok) {
-                const updated = await response.json();
-                setCxoData(updated);
-                localStorage.setItem("cxoData", JSON.stringify(updated));
-                setEditModalOpen(false);
-              } else {
-                const errorText = await response.text();
-                alert("Failed to update profile: " + errorText);
-              }
-            } catch (err) {
-              alert("Error updating profile: " + err.message);
-            } finally {
-              setEditLoading(false);
-            }
-          }}>
+            }}>
             
             {/* Personal Information Section */}
-            <div className="mb-8">
+            <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b border-gray-200 pb-2">👤 Personal Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
@@ -590,6 +657,26 @@ const CXODashboard = () => {
                 <div className="flex flex-col">
                   <label className="text-xs font-semibold text-gray-600 mb-1">Email</label>
                   <input type="email" className="border border-gray-300 rounded px-3 py-2 text-sm" value={editForm.email || ""} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} required />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-gray-600 mb-1">Password</label>
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      className="border border-gray-300 rounded px-3 py-2 text-sm pr-10 w-full" 
+                      value={editForm.password || ""} 
+                      onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))} 
+                      placeholder="Enter new password (optional)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to keep current password</p>
                 </div>
                 <div className="flex flex-col">
                   <label className="text-xs font-semibold text-gray-600 mb-1">Phone</label>
@@ -871,38 +958,40 @@ const CXODashboard = () => {
                 )}
               </div>
             </div>
-            <datalist id="city-list">
-              {(citiesByState[editForm.state] || []).map(city => (
-                <option key={city} value={city} />
-              ))}
-            </datalist>
-            
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-end mt-8 border-t pt-6">
-              <button 
-                type="button" 
-                className="px-6 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors" 
-                onClick={() => setEditModalOpen(false)} 
-                disabled={editLoading}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center" 
-                disabled={editLoading}
-              >
-                {editLoading ? (
-                  <>
-                    <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-            </div>
-          </form>
+              <datalist id="city-list">
+                {(citiesByState[editForm.state] || []).map(city => (
+                  <option key={city} value={city} />
+                ))}
+              </datalist>
+            </form>
+          </div>
+          
+          {/* Footer with buttons */}
+          <div className="flex gap-3 justify-end p-6 border-t border-gray-200 bg-gray-50">
+            <button 
+              type="button" 
+              className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors" 
+              onClick={() => setEditModalOpen(false)} 
+              disabled={editLoading}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              form="edit-executive-form"
+              className="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 flex items-center justify-center transition-colors" 
+              disabled={editLoading}
+            >
+              {editLoading ? (
+                <>
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

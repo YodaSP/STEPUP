@@ -23,8 +23,18 @@ const studentSchema = new mongoose.Schema({
   resume: { type: String, required: true },
   photo: { type: String },
   linkedin: { type: String },
+  // Authentication fields
+  googleId: { type: String, sparse: true },
+  password: { type: String },
+  authMethod: { type: String, enum: ['google', 'password', 'both'], default: 'google' },
+  isEmailVerified: { type: Boolean, default: false },
+  lastLogin: { type: Date }
 }, {
   timestamps: true,
 });
+
+// Index for efficient queries
+studentSchema.index({ email: 1 });
+studentSchema.index({ googleId: 1 });
 
 module.exports = mongoose.model("Student", studentSchema);
