@@ -6,7 +6,7 @@ GOOGLE_CLIENT_SECRET=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
 JWT_SECRET=36e9f162221739b58914d57b94ca1644beb51d95efe2187fe059c6419550bf16441ea4aa1cad6220fdf21ee56ebc99f6d5695e6a9761fdcdb13f597f770d4f4a
 
 # MongoDB Configuration
-MONGODB_URI=mongodb+srv://admin:admin@cluster0.a63tul9.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Cluster0
+MONGODB_URI=mongodb+srv://stepupmeshlinks:stepupmeshlinks%231305@stepup.xwectwc.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Stepup
 
 # Server Configuration
 PORT=5000

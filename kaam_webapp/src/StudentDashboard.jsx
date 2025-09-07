@@ -63,12 +63,16 @@ const StudentDashboard = () => {
     const storedData = localStorage.getItem("studentData");
     const storedProfile = localStorage.getItem("studentProfile");
 
-    if (storedProfile) {
-      // If we have profile data from Google OAuth, use that
-      setStudentData(JSON.parse(storedProfile));
-    } else if (storedData) {
-      // Fallback to studentData if no profile
-      setStudentData(JSON.parse(storedData));
+    if (storedData) {
+      // Use studentData which contains the full user object with ID
+      const parsedData = JSON.parse(storedData);
+      console.log('🔍 Loaded studentData from localStorage:', parsedData);
+      setStudentData(parsedData);
+    } else if (storedProfile) {
+      // Fallback to profile data if no studentData
+      const parsedProfile = JSON.parse(storedProfile);
+      console.log('🔍 Loaded studentProfile from localStorage:', parsedProfile);
+      setStudentData(parsedProfile);
     } else if (email) {
       // Fetch data from backend if not in localStorage
       fetch(`http://localhost:5000/api/students/email/${encodeURIComponent(email)}`)
@@ -199,7 +203,14 @@ const StudentDashboard = () => {
                   <button
                     className="btn-touch px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                     onClick={() => {
-                      setEditForm({ ...defaultStudentFields, ...studentData });
+                      console.log('🔍 Student data before edit:', studentData);
+                      const editData = { 
+                        ...defaultStudentFields, 
+                        ...studentData,
+                        _id: studentData._id || studentData.id // Ensure ID is set
+                      };
+                      console.log('🔍 Edit form data:', editData);
+                      setEditForm(editData);
                       setEditModalOpen(true);
                     }}
                   >
