@@ -103,6 +103,8 @@ const CXOLogin = () => {
           }
           
           navigate("/cxo-dashboard");
+        } else if (data.userNotFound) {
+          navigate("/registration-not-found", { state: { userType: "executive", email: formData.email } });
         } else {
           setError(data.message || "Login failed");
         }

@@ -28,8 +28,9 @@ const registerStudent = async (req, res) => {
       gender,
     } = req.body;
 
-    const resume = req.files?.resume?.[0]?.path;
-    const photo = req.files?.photo?.[0]?.path;
+    // With multer-s3, locations are available at .location (public URL) and .key/.bucket
+    const resume = req.files?.resume?.[0]?.location || req.files?.resume?.[0]?.path;
+    const photo = req.files?.photo?.[0]?.location || req.files?.photo?.[0]?.path;
 
     // Validate required fields (add country, state, city for new registrations)
     if (!fullName || !email || !phone || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
@@ -143,11 +144,15 @@ const getStudentLocationStats = async (req, res) => {
 const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const update = { ...req.body };
+    const { photo, resume, ...bodyWithoutFiles } = req.body;
+    const update = { ...bodyWithoutFiles };
     
     console.log('🔍 Update Student Debug - ID:', id);
     console.log('🔍 Update Student Debug - Request body:', req.body);
-    console.log('🔍 Update Student Debug - Update object:', update);
+    console.log('🔍 Update Student Debug - Request files:', req.files);
+    console.log('🔍 Update Student Debug - Body without files:', bodyWithoutFiles);
+    console.log('🔍 Update Student Debug - Photo from body:', photo, typeof photo);
+    console.log('🔍 Update Student Debug - Resume from body:', resume, typeof resume);
     
     // Handle password update if provided
     if (update.password && update.password.trim() !== '') {
@@ -167,13 +172,27 @@ const updateStudent = async (req, res) => {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {
         return res.status(400).json({ message: "Resume must be a PDF." });
       }
-      update.resume = req.files.resume[0].path;
+      // Delete old resume from S3 if replacing
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.resume && req.body.currentResumeUrl) {
+          await deleteObjectFromUrl(req.body.currentResumeUrl);
+        }
+      } catch (_e) {}
+      update.resume = req.files.resume[0].location || req.files.resume[0].path;
     }
     if (req.files?.photo) {
       if (req.files.photo[0]?.mimetype && !req.files.photo[0].mimetype.startsWith("image/")) {
         return res.status(400).json({ message: "Profile photo must be an image." });
       }
-      update.photo = req.files.photo[0].path;
+      // Delete old photo from S3 if replacing
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.photo && req.body.currentPhotoUrl) {
+          await deleteObjectFromUrl(req.body.currentPhotoUrl);
+        }
+      } catch (_e) {}
+      update.photo = req.files.photo[0].location || req.files.photo[0].path;
     }
     
     console.log('🔍 Update Student Debug - Final update object:', update);

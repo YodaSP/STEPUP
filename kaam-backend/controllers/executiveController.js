@@ -151,8 +151,8 @@ const registerExecutive = async (req, res) => {
     const normalizedLanguagesKnown = typeof languagesKnown === "string" ? languagesKnown.trim() : "";
     const normalizedSkills = typeof skills === "string" ? skills.trim() : "";
 
-    const resumePath = req.files?.resume?.[0]?.path || null;
-    const photoPath = req.files?.photo?.[0]?.path || null;
+    const resumePath = (req.files?.resume?.[0]?.location || req.files?.resume?.[0]?.path) || null;
+    const photoPath = (req.files?.photo?.[0]?.location || req.files?.photo?.[0]?.path) || null;
 
     // Hash password
     const saltRounds = 12;
@@ -311,11 +311,15 @@ const getExecutiveLocationStats = async (req, res) => {
 const updateExecutive = async (req, res) => {
   try {
     const { id } = req.params;
-    const update = { ...req.body };
+    const { photo, resume, ...bodyWithoutFiles } = req.body;
+    const update = { ...bodyWithoutFiles };
     
     console.log('🔍 Update Executive Debug - ID:', id);
     console.log('🔍 Update Executive Debug - Request body:', req.body);
-    console.log('🔍 Update Executive Debug - Update object:', update);
+    console.log('🔍 Update Executive Debug - Request files:', req.files);
+    console.log('🔍 Update Executive Debug - Body without files:', bodyWithoutFiles);
+    console.log('🔍 Update Executive Debug - Photo from body:', photo, typeof photo);
+    console.log('🔍 Update Executive Debug - Resume from body:', resume, typeof resume);
     
     // Handle password update if provided
     if (update.password && update.password.trim() !== '') {
@@ -328,19 +332,31 @@ const updateExecutive = async (req, res) => {
       console.log('🔍 Update Executive Debug - Empty password, removing from update');
       delete update.password; // Don't update password if empty
     }
-    
+
     // Handle file uploads
     if (req.files?.resume) {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {
         return res.status(400).json({ message: "Resume must be a PDF." });
       }
-      update.resume = req.files.resume[0].path;
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.resume && req.body.currentResumeUrl) {
+          await deleteObjectFromUrl(req.body.currentResumeUrl);
+        }
+      } catch (_e) {}
+      update.resume = req.files.resume[0].location || req.files.resume[0].path;
     }
     if (req.files?.photo) {
       if (req.files.photo[0]?.mimetype && !req.files.photo[0].mimetype.startsWith("image/")) {
         return res.status(400).json({ message: "Profile photo must be an image." });
       }
-      update.photo = req.files.photo[0].path;
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.photo && req.body.currentPhotoUrl) {
+          await deleteObjectFromUrl(req.body.currentPhotoUrl);
+        }
+      } catch (_e) {}
+      update.photo = req.files.photo[0].location || req.files.photo[0].path;
     }
 
     // Parse work experience if it's a string

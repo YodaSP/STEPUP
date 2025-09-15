@@ -490,7 +490,7 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       console.log('❌ Login Debug - User not found');
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'User not found', success: false, userNotFound: true, user: { email, userType } });
     }
 
     console.log('✅ Login Debug - User found:', user.fullName);

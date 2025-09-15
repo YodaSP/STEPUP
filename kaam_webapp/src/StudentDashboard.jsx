@@ -30,6 +30,19 @@ const StudentDashboard = () => {
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const handleViewResume = async () => {
+    try {
+      if (!studentData?._id) return;
+      const res = await fetch(`${API_BASE}/api/students/${studentData._id}/resume`);
+      if (!res.ok) return alert("Failed to get resume link");
+      const { url } = await res.json();
+      if (url) window.open(url, "_blank");
+    } catch (_e) {
+      alert("Unable to open resume");
+    }
+  };
 
   // Add a default field template at the top of the component
   const defaultStudentFields = {
@@ -73,20 +86,44 @@ const StudentDashboard = () => {
       const parsedProfile = JSON.parse(storedProfile);
       console.log('🔍 Loaded studentProfile from localStorage:', parsedProfile);
       setStudentData(parsedProfile);
-    } else if (email) {
-      // Fetch data from backend if not in localStorage
-      fetch(`http://localhost:5000/api/students/email/${encodeURIComponent(email)}`)
-        .then(response => response.json())
-        .then(data => {
-          setStudentData(data);
-          localStorage.setItem("studentData", JSON.stringify(data));
-        })
-        .catch(error => {
-          console.error("Error fetching student data:", error);
-        });
     }
-    setIsLoading(false);
+
+    // Always fetch fresh data by email to ensure we have _id and latest URLs
+    if (email) {
+      (async () => {
+        try {
+          const resp = await fetch(`${API_BASE}/api/students/email/${encodeURIComponent(email)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            setStudentData(data);
+            localStorage.setItem("studentData", JSON.stringify(data));
+          }
+        } catch (err) {
+          console.error("Error refreshing student data:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Load presigned photo URL when studentData changes
+  useEffect(() => {
+    const loadPhoto = async () => {
+      try {
+        if (studentData && studentData._id && studentData.photo) {
+          const res = await fetch(`${API_BASE}/api/students/${studentData._id}/photo`);
+          if (res.ok) {
+            const { url } = await res.json();
+            if (url) setPhotoUrl(url);
+          }
+        }
+      } catch (_e) {}
+    };
+    loadPhoto();
+  }, [studentData]);
 
   const handleLogout = () => {
     localStorage.removeItem("studentEmail");
@@ -142,10 +179,14 @@ const StudentDashboard = () => {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
                   <div className="text-center mb-6 sm:mb-8">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white text-2xl sm:text-3xl font-bold">
-                        {studentData.fullName?.charAt(0)?.toUpperCase() || "S"}
-                      </span>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {photoUrl ? (
+                        <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white text-2xl sm:text-3xl font-bold">
+                          {studentData.fullName?.charAt(0)?.toUpperCase() || "S"}
+                        </span>
+                      )}
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                       {studentData.fullName}
@@ -196,6 +237,11 @@ const StudentDashboard = () => {
                       </div>
                     </div>
                   </div>
+                  {studentData.resume && (
+                    <div className="flex items-center justify-center mt-4">
+                      <button type="button" onClick={handleViewResume} className="text-blue-600 underline text-sm">View Resume</button>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Edit Profile Button */}
@@ -330,10 +376,12 @@ const StudentDashboard = () => {
                   formDataToSend.append('otherCity', '');
                 }
                 formDataToSend.append('currentLocation', locationToSend);
-                // Append all other fields except state/city/otherState/otherCity
+                // Append all other fields except state/city/otherState/otherCity and file fields
                 for (const key in formData) {
-                  if (formData[key] !== null && formData[key] !== undefined) {
-                    formDataToSend.append(key, formData[key]);
+                  if (key === 'resume' || key === 'photo') continue;
+                  const val = formData[key];
+                  if (val !== null && val !== undefined) {
+                    formDataToSend.append(key, val);
                   }
                 }
                 if (resume instanceof File) {
@@ -342,7 +390,15 @@ const StudentDashboard = () => {
                 if (photo instanceof File) {
                   formDataToSend.append('photo', photo);
                 }
-                const response = await fetch(`http://localhost:5000/api/students/${editForm._id}`, {
+                // When replacing files, send current URLs so backend can delete old objects
+                if (photo instanceof File && studentData?.photo) {
+                  formDataToSend.append('currentPhotoUrl', studentData.photo);
+                }
+                if (resume instanceof File && studentData?.resume) {
+                  formDataToSend.append('currentResumeUrl', studentData.resume);
+                }
+
+                const response = await fetch(`${API_BASE}/api/students/${editForm._id}`, {
                   method: "PUT",
                   body: formDataToSend,
                 });
@@ -350,6 +406,16 @@ const StudentDashboard = () => {
                   const updated = await response.json();
                   setStudentData(updated);
                   localStorage.setItem("studentData", JSON.stringify(updated));
+                  // refresh photo preview
+                  try {
+                    if (updated.photo) {
+                      const pres = await fetch(`${API_BASE}/api/students/${updated._id}/photo`);
+                      if (pres.ok) {
+                        const { url } = await pres.json();
+                        setPhotoUrl(url || "");
+                      }
+                    }
+                  } catch (_e) {}
                   setEditModalOpen(false);
                 } else {
                   const errorText = await response.text();

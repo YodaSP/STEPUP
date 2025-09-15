@@ -110,6 +110,8 @@ const StudentLogin = () => {
           }
           
           navigate("/student-dashboard");
+        } else if (data.userNotFound) {
+          navigate("/registration-not-found", { state: { userType: "student", email: formData.email } });
         } else {
           setError(data.message || "Login failed");
         }

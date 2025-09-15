@@ -30,6 +30,19 @@ const CXODashboard = () => {
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const handleViewResume = async () => {
+    try {
+      if (!cxoData?._id) return;
+      const res = await fetch(`${API_BASE}/api/executives/${cxoData._id}/resume`);
+      if (!res.ok) return alert("Failed to get resume link");
+      const { url } = await res.json();
+      if (url) window.open(url, "_blank");
+    } catch (_e) {
+      alert("Unable to open resume");
+    }
+  };
 
   // Add a default field template at the top of the component
   const defaultCXOFields = {
@@ -101,37 +114,42 @@ const CXODashboard = () => {
       console.log("🔍 CXO Dashboard: Parsed stored data:", parsedData);
       setCxoData(parsedData);
       setIsLoading(false);
-    } else if (email) {
-      // Fetch data from backend if not in localStorage
-      console.log("🔍 CXO Dashboard: Fetching data from backend for email:", email);
-      
-      const fetchData = async () => {
+    }
+
+    if (email) {
+      (async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/executives/email/${encodeURIComponent(email)}`);
-          console.log("🔍 CXO Dashboard: Backend response status:", response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          const response = await fetch(`${API_BASE}/api/executives/email/${encodeURIComponent(email)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setCxoData(data);
+            localStorage.setItem("cxoData", JSON.stringify(data));
           }
-          
-          const data = await response.json();
-          console.log("🔍 CXO Dashboard: Backend data received:", data);
-          setCxoData(data);
-          localStorage.setItem("cxoData", JSON.stringify(data));
         } catch (error) {
           console.error("❌ CXO Dashboard: Error fetching CXO data:", error);
-          // Show empty state if fetch fails
         } finally {
           setIsLoading(false);
         }
-      };
-
-      // Add a small delay to ensure backend is ready
-      setTimeout(fetchData, 100);
+      })();
     } else {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const loadPhoto = async () => {
+      try {
+        if (cxoData && cxoData._id && cxoData.photo) {
+          const res = await fetch(`${API_BASE}/api/executives/${cxoData._id}/photo`);
+          if (res.ok) {
+            const { url } = await res.json();
+            if (url) setPhotoUrl(url);
+          }
+        }
+      } catch (_e) {}
+    };
+    loadPhoto();
+  }, [cxoData]);
 
   const handleLogout = () => {
     localStorage.removeItem("cxoEmail");
@@ -185,10 +203,14 @@ const CXODashboard = () => {
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
                 <div className="text-center mb-6 sm:mb-8">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white text-2xl sm:text-3xl font-bold">
-                      {cxoData.fullName?.charAt(0)?.toUpperCase() || "C"}
-                    </span>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-4 bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-2xl sm:text-3xl font-bold">
+                        {cxoData.fullName?.charAt(0)?.toUpperCase() || "C"}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     {cxoData.fullName}
@@ -197,6 +219,11 @@ const CXODashboard = () => {
                     {cxoData.currentDesignation || cxoData.position} • {cxoData.company}
                   </p>
                 </div>
+                {cxoData.resume && (
+                  <div className="flex items-center justify-center mt-4">
+                    <button type="button" onClick={handleViewResume} className="text-green-600 underline text-sm">View Resume</button>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -567,6 +594,7 @@ const CXODashboard = () => {
                 }
                 const data = new FormData();
                 for (let key in allFields) {
+                  if (key === 'resume' || key === 'photo') continue;
                   if (key === 'currentLocation') {
                     if (allFields.country === 'IN') {
                       let loc = allFields.state === 'Others' ? allFields.otherState : allFields.state;
