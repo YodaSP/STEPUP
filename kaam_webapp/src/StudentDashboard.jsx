@@ -44,6 +44,31 @@ const StudentDashboard = () => {
     }
   };
 
+  // Helper function to parse location string back to state and city
+  const parseLocationToStateCity = (locationString) => {
+    if (!locationString || typeof locationString !== 'string') return { state: '', city: '' };
+    
+    // Try to split by comma and extract state and city
+    const parts = locationString.split(',').map(part => part.trim());
+    if (parts.length >= 2) {
+      return {
+        state: parts[0] || '',
+        city: parts[1] || ''
+      };
+    }
+    
+    // If no comma, try to find state in the string
+    const indianStates = Object.keys(citiesByState);
+    for (const state of indianStates) {
+      if (locationString.toLowerCase().includes(state.toLowerCase())) {
+        const city = locationString.replace(new RegExp(state, 'gi'), '').replace(/,/g, '').trim();
+        return { state, city };
+      }
+    }
+    
+    return { state: '', city: '' };
+  };
+
   // Add a default field template at the top of the component
   const defaultStudentFields = {
     fullName: '',
@@ -195,6 +220,11 @@ const StudentDashboard = () => {
                       {studentData.degree} • {studentData.university}
                     </p>
                   </div>
+                  {studentData.resume && (
+                    <div className="flex items-center justify-center mt-4">
+                      <button type="button" onClick={handleViewResume} className="text-blue-600 underline text-sm">View Resume</button>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
@@ -237,11 +267,6 @@ const StudentDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  {studentData.resume && (
-                    <div className="flex items-center justify-center mt-4">
-                      <button type="button" onClick={handleViewResume} className="text-blue-600 underline text-sm">View Resume</button>
-                    </div>
-                  )}
                 </div>
                 
                 {/* Edit Profile Button */}
@@ -250,10 +275,28 @@ const StudentDashboard = () => {
                     className="btn-touch px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                     onClick={() => {
                       console.log('🔍 Student data before edit:', studentData);
+                      
+                      // Parse location if state/city are not already set
+                      let state = studentData.state || '';
+                      let city = studentData.city || '';
+                      
+                      if (!state && !city && studentData.currentLocation) {
+                        const parsed = parseLocationToStateCity(studentData.currentLocation);
+                        state = parsed.state;
+                        city = parsed.city;
+                      }
+                      
                       const editData = { 
                         ...defaultStudentFields, 
                         ...studentData,
-                        _id: studentData._id || studentData.id // Ensure ID is set
+                        _id: studentData._id || studentData.id, // Ensure ID is set
+                        // Preserve existing location fields to avoid validation issues
+                        state: state,
+                        city: city,
+                        otherState: studentData.otherState || '',
+                        otherCity: studentData.otherCity || '',
+                        country: studentData.country || 'IN',
+                        currentLocation: studentData.currentLocation || ''
                       };
                       console.log('🔍 Edit form data:', editData);
                       setEditForm(editData);
