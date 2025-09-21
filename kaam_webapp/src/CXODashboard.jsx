@@ -55,6 +55,7 @@ const CXODashboard = () => {
     phone: '',
     currentLocation: '',
     dateOfBirth: '',
+    age: null,
     maritalStatus: 'Other',
     gender: 'Other',
     state: '',
@@ -248,6 +249,16 @@ const CXODashboard = () => {
 
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600 text-sm">🎂</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Age</p>
+                      <p className="text-sm sm:text-base text-gray-900">{cxoData.age ? `${cxoData.age} years old` : 'Not specified'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                       <span className="text-green-600 text-sm">📍</span>
                     </div>
                     <div>
@@ -399,7 +410,7 @@ const CXODashboard = () => {
               )}
 
               {/* Skills */}
-              {(cxoData.technicalSkills || cxoData.softSkills) && (
+              {(cxoData.technicalSkills || cxoData.softSkills || cxoData.toolsTechnologies || cxoData.languagesKnown) && (
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
                     <span className="text-2xl mr-3">🔧</span>
@@ -428,6 +439,36 @@ const CXODashboard = () => {
                       <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Languages Known</p>
                         <p className="text-sm sm:text-base text-gray-900">{cxoData.languagesKnown}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Information */}
+              {(cxoData.awardsRecognition || cxoData.hobbiesInterests || cxoData.professionalMemberships) && (
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                    <span className="text-2xl mr-3">⭐</span>
+                    Additional Information
+                  </h3>
+                  <div className="space-y-4">
+                    {cxoData.awardsRecognition && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
+                        <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition}</p>
+                      </div>
+                    )}
+                    {cxoData.hobbiesInterests && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
+                        <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests}</p>
+                      </div>
+                    )}
+                    {cxoData.professionalMemberships && (
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
+                        <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships}</p>
                       </div>
                     )}
                   </div>
@@ -592,77 +633,74 @@ const CXODashboard = () => {
                   setEditLoading(false);
                   return;
                 }
-                const data = new FormData();
-                for (let key in allFields) {
+                const { resume, photo, state, city, otherState, otherCity, country, currentLocation, ...formData } = allFields;
+                const formDataToSend = new FormData();
+                
+                // Compose currentLocation as in registration (similar to student dashboard)
+                let locationToSend = '';
+                if (country === 'IN') {
+                  locationToSend = (state === 'Others' ? otherState : state) + ', ' + (state === 'Others' ? otherCity : city);
+                  // Always send state/city/otherState/otherCity
+                  formDataToSend.append('state', state);
+                  formDataToSend.append('city', city);
+                  formDataToSend.append('otherState', otherState);
+                  formDataToSend.append('otherCity', otherCity);
+                } else {
+                  locationToSend = currentLocation;
+                  formDataToSend.append('state', '');
+                  formDataToSend.append('city', '');
+                  formDataToSend.append('otherState', '');
+                  formDataToSend.append('otherCity', '');
+                }
+                formDataToSend.append('currentLocation', locationToSend);
+                
+                // Append all other fields except state/city/otherState/otherCity and file fields
+                for (const key in formData) {
                   if (key === 'resume' || key === 'photo') continue;
-                  if (key === 'currentLocation') {
-                    if (allFields.country === 'IN') {
-                      let loc = allFields.state === 'Others' ? allFields.otherState : allFields.state;
-                      loc += ', ' + (allFields.state === 'Others' ? allFields.otherCity : allFields.city);
-                      data.append('currentLocation', loc);
-                    } else {
-                      data.append('currentLocation', allFields.currentLocation);
-                    }
-                  } else if (key !== 'state' && key !== 'city' && key !== 'otherState' && key !== 'otherCity' && key !== 'otherCountry') {
-                    data.append(key, allFields[key] ?? '');
+                  const val = formData[key];
+                  if (val !== null && val !== undefined) {
+                    formDataToSend.append(key, val);
                   }
                 }
-                if (allFields.resume instanceof File) data.append('resume', allFields.resume);
-                if (allFields.photo instanceof File) data.append('photo', allFields.photo);
                 
-                // Use the new auth route for profile updates
-                const response = await fetch(`http://localhost:5000/api/auth/update-profile/executive/${execId}`, {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(Object.fromEntries(data)),
+                if (resume instanceof File) {
+                  formDataToSend.append('resume', resume);
+                }
+                if (photo instanceof File) {
+                  formDataToSend.append('photo', photo);
+                }
+                
+                // When replacing files, send current URLs so backend can delete old objects
+                if (photo instanceof File && cxoData?.photo) {
+                  formDataToSend.append('currentPhotoUrl', cxoData.photo);
+                }
+                if (resume instanceof File && cxoData?.resume) {
+                  formDataToSend.append('currentResumeUrl', cxoData.resume);
+                }
+                
+                // Use the same pattern as student dashboard
+                const response = await fetch(`${API_BASE}/api/executives/${execId}`, {
+                  method: "PUT",
+                  body: formDataToSend,
                 });
                 
                 if (response.ok) {
                   const updated = await response.json();
+                  setCxoData(updated);
+                  localStorage.setItem("cxoData", JSON.stringify(updated));
                   
-                  // If password was provided, update it separately
-                  if (allFields.password && allFields.password.trim()) {
-                    try {
-                      const passwordResponse = await fetch(`http://localhost:5000/api/auth/set-password`, {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          email: cxoData.email,
-                          password: allFields.password,
-                          userType: "executive"
-                        }),
-                      });
-                      
-                      if (passwordResponse.ok) {
-                        console.log("Password updated successfully");
-                      } else {
-                        const passwordError = await passwordResponse.text();
-                        console.warn("Password update failed:", passwordError);
-                      }
-                    } catch (passwordErr) {
-                      console.warn("Password update error:", passwordErr);
-                    }
-                  }
-                  
-                  // Refresh user data to get the latest information
+                  // Refresh photo preview if updated
                   try {
-                    const refreshResponse = await fetch(`http://localhost:5000/api/auth/test-user-data/executive/${cxoData.email}`);
-                    if (refreshResponse.ok) {
-                      const refreshData = await refreshResponse.json();
-                      const newUserData = refreshData.testResponse.user;
-                      setCxoData(newUserData);
-                      localStorage.setItem("cxoData", JSON.stringify(newUserData));
+                    if (updated.photo) {
+                      const pres = await fetch(`${API_BASE}/api/executives/${updated._id}/photo`);
+                      if (pres.ok) {
+                        const { url } = await pres.json();
+                        setPhotoUrl(url || "");
+                      }
                     }
-                  } catch (refreshErr) {
-                    console.warn("Failed to refresh user data:", refreshErr);
-                  }
+                  } catch (_e) {}
                   
                   setEditModalOpen(false);
-                  alert("Profile updated successfully!");
                 } else {
                   const errorText = await response.text();
                   alert("Failed to update profile: " + errorText);

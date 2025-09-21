@@ -1,6 +1,19 @@
 const Executive = require("../models/Executive");
 const bcrypt = require("bcryptjs");
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const registerExecutive = async (req, res) => {
   try {
     console.log('🔍 Executive Registration Debug - Request body:', req.body);
@@ -158,6 +171,9 @@ const registerExecutive = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    // Calculate age from date of birth
+    const age = calculateAge(dateOfBirth);
+
     const executive = new Executive({
       // Section 1: Personal Information
       fullName,
@@ -172,6 +188,7 @@ const registerExecutive = async (req, res) => {
       otherCity,
       currentLocation,
       dateOfBirth,
+      age,
       maritalStatus,
       gender,
 
@@ -331,6 +348,12 @@ const updateExecutive = async (req, res) => {
     } else if (update.password === '') {
       console.log('🔍 Update Executive Debug - Empty password, removing from update');
       delete update.password; // Don't update password if empty
+    }
+
+    // Handle date of birth update and calculate age
+    if (req.body.dateOfBirth) {
+      update.dateOfBirth = req.body.dateOfBirth;
+      update.age = calculateAge(req.body.dateOfBirth);
     }
 
     // Handle file uploads

@@ -52,19 +52,10 @@ const cardData = [
   },
   {
     title: "I am a CXO",
-    description: "Register yourself if you are a CXO.",
+    description: "Register yourself to connect with top companies and showcase your executive expertise.",
     button: "Register as CXO →",
     color: "green",
     route: "/executive-register",
-  },
-  {
-    title: "I am an Employer",
-    description:
-      "Register your company to post job openings and find the right talent.",
-    button: "Register as Employer →",
-    color: "purple",
-    route: "/employer-register",
-    disabled: true, // Under construction
   },
 ];
 
@@ -365,17 +356,17 @@ const HomePage = () => {
                 </p>
 
                 {/* CTA Cards container - Responsive Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+                <div className="flex flex-col lg:flex-row justify-center items-center gap-6 sm:gap-8 max-w-5xl mx-auto">
                   {cardData.map((card) => (
                     <div
                       key={card.title}
                       onClick={card.disabled ? undefined : () => navigate(card.route)}
                       className={`
-                        cursor-pointer rounded-2xl sm:rounded-3xl bg-white/90 p-6 sm:p-8 flex flex-col justify-between items-center h-full
+                        cursor-pointer rounded-2xl sm:rounded-3xl bg-white/90 p-6 sm:p-8 flex flex-col justify-between items-center
                         shadow-xl ${card.disabled ? '' : 'hover:scale-105 hover:shadow-2xl'} transition-all duration-300 border-2
                         border-transparent hover:border-${card.color}-500
                         text-gray-800 transform hover:-translate-y-1
-                        min-h-[320px] ${card.disabled ? 'opacity-60 cursor-not-allowed' : ''}
+                        w-full max-w-sm h-[320px] ${card.disabled ? 'opacity-60 cursor-not-allowed' : ''}
                       `}
                     >
                       <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 text-gray-900 text-center">

@@ -77,6 +77,8 @@ const StudentDashboard = () => {
     otherCountry: '',
     countryCode: '+91',
     phone: '',
+    dateOfBirth: '',
+    age: null,
     university: '',
     degree: '',
     specialization: '',
@@ -244,6 +246,16 @@ const StudentDashboard = () => {
                       <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wide">Gender</p>
                         <p className="text-sm sm:text-base text-gray-900">{studentData.gender}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-sm">🎂</span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Age</p>
+                        <p className="text-sm sm:text-base text-gray-900">{studentData.age ? `${studentData.age} years old` : 'Not specified'}</p>
                       </div>
                     </div>
 
@@ -513,6 +525,10 @@ const StudentDashboard = () => {
                       </select>
                       <input type="text" value={editForm.phone || ''} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))} className="flex-1 px-3 py-2 border border-gray-300 rounded" maxLength={10} required />
                     </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-semibold text-gray-600 mb-1">Date of Birth</label>
+                    <input type="date" className="border border-gray-300 rounded px-3 py-2 text-sm" value={editForm.dateOfBirth || ""} onChange={e => setEditForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
                   </div>
                   <div className="flex flex-col">
                     <label className="text-xs font-semibold text-gray-600 mb-1">Gender</label>

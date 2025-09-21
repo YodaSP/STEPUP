@@ -1,6 +1,19 @@
 const Student = require("../models/Student");
 const bcrypt = require("bcryptjs");
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const registerStudent = async (req, res) => {
   try {
     console.log('Received student registration:', req.body, req.files);
@@ -9,6 +22,7 @@ const registerStudent = async (req, res) => {
       email,
       phone,
       password,
+      dateOfBirth,
       country,
       otherCountry,
       state,
@@ -33,8 +47,8 @@ const registerStudent = async (req, res) => {
     const photo = req.files?.photo?.[0]?.location || req.files?.photo?.[0]?.path;
 
     // Validate required fields (add country, state, city for new registrations)
-    if (!fullName || !email || !phone || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
-      return res.status(400).json({ message: "All required fields must be provided, including gender." });
+    if (!fullName || !email || !phone || !dateOfBirth || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
+      return res.status(400).json({ message: "All required fields must be provided, including date of birth and gender." });
     }
     
     // Password validation - simplified (no strict requirements)
@@ -60,11 +74,16 @@ const registerStudent = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
+    // Calculate age from date of birth
+    const age = calculateAge(dateOfBirth);
+
     const student = new Student({
       fullName,
       email,
       phone,
       password: hashedPassword,
+      dateOfBirth,
+      age,
       country,
       otherCountry,
       state,
@@ -167,6 +186,13 @@ const updateStudent = async (req, res) => {
     }
     
     if (req.body.gender) update.gender = req.body.gender;
+    
+    // Handle date of birth update and calculate age
+    if (req.body.dateOfBirth) {
+      update.dateOfBirth = req.body.dateOfBirth;
+      update.age = calculateAge(req.body.dateOfBirth);
+    }
+    
     // If files are present, add them
     if (req.files?.resume) {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {

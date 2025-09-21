@@ -5,6 +5,8 @@ const studentSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
   gender: { type: String, enum: ['Male', 'Female', 'Other'], default: 'Other' },
+  dateOfBirth: { type: String, required: true },
+  age: { type: Number },
   country: { type: String, required: false },
   otherCountry: { type: String },
   state: { type: String, required: false },
