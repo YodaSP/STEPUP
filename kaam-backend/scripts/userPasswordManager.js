@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 // MongoDB connection
-const mongoURI = process.env.MONGODB_URI || "mongodb+srv://admin:admin@cluster0.a63tul9.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Cluster0";
+const mongoURI = process.env.MONGODB_URI || "mongodb+srv://stepupmeshlinks:stepupmeshlinks%231305@stepup.xwectwc.mongodb.net/StepUP_Backend?retryWrites=true&w=majority&appName=Stepup";
 
 // Import models
 const Student = require('../models/Student');

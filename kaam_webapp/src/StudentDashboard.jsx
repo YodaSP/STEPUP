@@ -30,6 +30,44 @@ const StudentDashboard = () => {
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const handleViewResume = async () => {
+    try {
+      if (!studentData?._id) return;
+      const res = await fetch(`${API_BASE}/api/students/${studentData._id}/resume`);
+      if (!res.ok) return alert("Failed to get resume link");
+      const { url } = await res.json();
+      if (url) window.open(url, "_blank");
+    } catch (_e) {
+      alert("Unable to open resume");
+    }
+  };
+
+  // Helper function to parse location string back to state and city
+  const parseLocationToStateCity = (locationString) => {
+    if (!locationString || typeof locationString !== 'string') return { state: '', city: '' };
+    
+    // Try to split by comma and extract state and city
+    const parts = locationString.split(',').map(part => part.trim());
+    if (parts.length >= 2) {
+      return {
+        state: parts[0] || '',
+        city: parts[1] || ''
+      };
+    }
+    
+    // If no comma, try to find state in the string
+    const indianStates = Object.keys(citiesByState);
+    for (const state of indianStates) {
+      if (locationString.toLowerCase().includes(state.toLowerCase())) {
+        const city = locationString.replace(new RegExp(state, 'gi'), '').replace(/,/g, '').trim();
+        return { state, city };
+      }
+    }
+    
+    return { state: '', city: '' };
+  };
 
   // Add a default field template at the top of the component
   const defaultStudentFields = {
@@ -39,6 +77,8 @@ const StudentDashboard = () => {
     otherCountry: '',
     countryCode: '+91',
     phone: '',
+    dateOfBirth: '',
+    age: null,
     university: '',
     degree: '',
     specialization: '',
@@ -63,26 +103,54 @@ const StudentDashboard = () => {
     const storedData = localStorage.getItem("studentData");
     const storedProfile = localStorage.getItem("studentProfile");
 
-    if (storedProfile) {
-      // If we have profile data from Google OAuth, use that
-      setStudentData(JSON.parse(storedProfile));
-    } else if (storedData) {
-      // Fallback to studentData if no profile
-      setStudentData(JSON.parse(storedData));
-    } else if (email) {
-      // Fetch data from backend if not in localStorage
-      fetch(`http://localhost:5000/api/students/email/${encodeURIComponent(email)}`)
-        .then(response => response.json())
-        .then(data => {
-          setStudentData(data);
-          localStorage.setItem("studentData", JSON.stringify(data));
-        })
-        .catch(error => {
-          console.error("Error fetching student data:", error);
-        });
+    if (storedData) {
+      // Use studentData which contains the full user object with ID
+      const parsedData = JSON.parse(storedData);
+      console.log('🔍 Loaded studentData from localStorage:', parsedData);
+      setStudentData(parsedData);
+    } else if (storedProfile) {
+      // Fallback to profile data if no studentData
+      const parsedProfile = JSON.parse(storedProfile);
+      console.log('🔍 Loaded studentProfile from localStorage:', parsedProfile);
+      setStudentData(parsedProfile);
     }
-    setIsLoading(false);
+
+    // Always fetch fresh data by email to ensure we have _id and latest URLs
+    if (email) {
+      (async () => {
+        try {
+          const resp = await fetch(`${API_BASE}/api/students/email/${encodeURIComponent(email)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            setStudentData(data);
+            localStorage.setItem("studentData", JSON.stringify(data));
+          }
+        } catch (err) {
+          console.error("Error refreshing student data:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Load presigned photo URL when studentData changes
+  useEffect(() => {
+    const loadPhoto = async () => {
+      try {
+        if (studentData && studentData._id && studentData.photo) {
+          const res = await fetch(`${API_BASE}/api/students/${studentData._id}/photo`);
+          if (res.ok) {
+            const { url } = await res.json();
+            if (url) setPhotoUrl(url);
+          }
+        }
+      } catch (_e) {}
+    };
+    loadPhoto();
+  }, [studentData]);
 
   const handleLogout = () => {
     localStorage.removeItem("studentEmail");
@@ -138,10 +206,14 @@ const StudentDashboard = () => {
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
                   <div className="text-center mb-6 sm:mb-8">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-white text-2xl sm:text-3xl font-bold">
-                        {studentData.fullName?.charAt(0)?.toUpperCase() || "S"}
-                      </span>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {photoUrl ? (
+                        <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white text-2xl sm:text-3xl font-bold">
+                          {studentData.fullName?.charAt(0)?.toUpperCase() || "S"}
+                        </span>
+                      )}
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                       {studentData.fullName}
@@ -150,6 +222,11 @@ const StudentDashboard = () => {
                       {studentData.degree} • {studentData.university}
                     </p>
                   </div>
+                  {studentData.resume && (
+                    <div className="flex items-center justify-center mt-4">
+                      <button type="button" onClick={handleViewResume} className="text-blue-600 underline text-sm">View Resume</button>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
@@ -169,6 +246,16 @@ const StudentDashboard = () => {
                       <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wide">Gender</p>
                         <p className="text-sm sm:text-base text-gray-900">{studentData.gender}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 text-sm">🎂</span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Age</p>
+                        <p className="text-sm sm:text-base text-gray-900">{studentData.age ? `${studentData.age} years old` : 'Not specified'}</p>
                       </div>
                     </div>
 
@@ -199,7 +286,32 @@ const StudentDashboard = () => {
                   <button
                     className="btn-touch px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-full shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                     onClick={() => {
-                      setEditForm({ ...defaultStudentFields, ...studentData });
+                      console.log('🔍 Student data before edit:', studentData);
+                      
+                      // Parse location if state/city are not already set
+                      let state = studentData.state || '';
+                      let city = studentData.city || '';
+                      
+                      if (!state && !city && studentData.currentLocation) {
+                        const parsed = parseLocationToStateCity(studentData.currentLocation);
+                        state = parsed.state;
+                        city = parsed.city;
+                      }
+                      
+                      const editData = { 
+                        ...defaultStudentFields, 
+                        ...studentData,
+                        _id: studentData._id || studentData.id, // Ensure ID is set
+                        // Preserve existing location fields to avoid validation issues
+                        state: state,
+                        city: city,
+                        otherState: studentData.otherState || '',
+                        otherCity: studentData.otherCity || '',
+                        country: studentData.country || 'IN',
+                        currentLocation: studentData.currentLocation || ''
+                      };
+                      console.log('🔍 Edit form data:', editData);
+                      setEditForm(editData);
                       setEditModalOpen(true);
                     }}
                   >
@@ -319,10 +431,12 @@ const StudentDashboard = () => {
                   formDataToSend.append('otherCity', '');
                 }
                 formDataToSend.append('currentLocation', locationToSend);
-                // Append all other fields except state/city/otherState/otherCity
+                // Append all other fields except state/city/otherState/otherCity and file fields
                 for (const key in formData) {
-                  if (formData[key] !== null && formData[key] !== undefined) {
-                    formDataToSend.append(key, formData[key]);
+                  if (key === 'resume' || key === 'photo') continue;
+                  const val = formData[key];
+                  if (val !== null && val !== undefined) {
+                    formDataToSend.append(key, val);
                   }
                 }
                 if (resume instanceof File) {
@@ -331,7 +445,15 @@ const StudentDashboard = () => {
                 if (photo instanceof File) {
                   formDataToSend.append('photo', photo);
                 }
-                const response = await fetch(`http://localhost:5000/api/students/${editForm._id}`, {
+                // When replacing files, send current URLs so backend can delete old objects
+                if (photo instanceof File && studentData?.photo) {
+                  formDataToSend.append('currentPhotoUrl', studentData.photo);
+                }
+                if (resume instanceof File && studentData?.resume) {
+                  formDataToSend.append('currentResumeUrl', studentData.resume);
+                }
+
+                const response = await fetch(`${API_BASE}/api/students/${editForm._id}`, {
                   method: "PUT",
                   body: formDataToSend,
                 });
@@ -339,6 +461,16 @@ const StudentDashboard = () => {
                   const updated = await response.json();
                   setStudentData(updated);
                   localStorage.setItem("studentData", JSON.stringify(updated));
+                  // refresh photo preview
+                  try {
+                    if (updated.photo) {
+                      const pres = await fetch(`${API_BASE}/api/students/${updated._id}/photo`);
+                      if (pres.ok) {
+                        const { url } = await pres.json();
+                        setPhotoUrl(url || "");
+                      }
+                    }
+                  } catch (_e) {}
                   setEditModalOpen(false);
                 } else {
                   const errorText = await response.text();
@@ -393,6 +525,10 @@ const StudentDashboard = () => {
                       </select>
                       <input type="text" value={editForm.phone || ''} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))} className="flex-1 px-3 py-2 border border-gray-300 rounded" maxLength={10} required />
                     </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-xs font-semibold text-gray-600 mb-1">Date of Birth</label>
+                    <input type="date" className="border border-gray-300 rounded px-3 py-2 text-sm" value={editForm.dateOfBirth || ""} onChange={e => setEditForm(f => ({ ...f, dateOfBirth: e.target.value }))} />
                   </div>
                   <div className="flex flex-col">
                     <label className="text-xs font-semibold text-gray-600 mb-1">Gender</label>

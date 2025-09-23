@@ -52,6 +52,17 @@ const StudentForm = () => {
   const validateCGPA = (cgpa) => cgpa === "" || (!isNaN(cgpa) && Number(cgpa) >= 0 && Number(cgpa) <= 100);
   const validateURL = (url) => url === "" || /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-./?%&=]*)?$/.test(url);
   const validateSkills = (skills) => skills.split(",").map(s => s.trim()).filter(Boolean).length > 0;
+  const validateDOB = (dob) => {
+    if (!dob) return false;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 16 && age <= 100; // Reasonable age range for students
+  };
 
   // Country code options
   const countryList = [
@@ -103,6 +114,7 @@ const StudentForm = () => {
     city: '',
     otherCity: '',
     gender: 'Other',
+    dateOfBirth: '',
   });
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
@@ -143,6 +155,7 @@ const StudentForm = () => {
     }
     if (!formData.countryCode) errs.phone = "Country code required";
     if (!/^\d{10}$/.test(formData.phone)) errs.phone = "Phone must be exactly 10 digits";
+    if (!validateDOB(formData.dateOfBirth)) errs.dateOfBirth = "Valid date of birth required (age 16-100)";
     if (!formData.university.trim()) errs.university = "University/College is required";
     if (!formData.degree.trim()) errs.degree = "Degree is required";
     if (!validateYear(formData.passingDate)) errs.passingDate = "Valid passing year required";
@@ -299,6 +312,7 @@ const StudentForm = () => {
         }
         if (!formData.countryCode) errs.phone = "Country code required";
         if (!/^\d{10}$/.test(formData.phone)) errs.phone = "Phone must be exactly 10 digits";
+        if (!validateDOB(formData.dateOfBirth)) errs.dateOfBirth = "Valid date of birth required (age 16-100)";
       }
       if (currentStep === 2) {
         if (!formData.university.trim()) errs.university = "University/College is required";
@@ -330,7 +344,8 @@ const StudentForm = () => {
         /^\d{10}$/.test(formData.phone) &&
         (formData.country === 'IN'
           ? formData.state && (formData.state !== 'Others' ? formData.city : formData.otherState && formData.otherCity)
-          : formData.currentLocation.trim())
+          : formData.currentLocation.trim()) &&
+        validateDOB(formData.dateOfBirth)
       );
       
       // Add password validation for new registrations
@@ -529,6 +544,19 @@ const StudentForm = () => {
                   {errors.phone && <span className="text-red-600 text-xs">{errors.phone}</span>}
                 </div>
                 
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    className="w-full px-3 sm:px-4 py-3 sm:py-4 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 text-base sm:text-lg"
+                    required
+                  />
+                  {errors.dateOfBirth && <span className="text-red-600 text-xs">{errors.dateOfBirth}</span>}
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wide">Gender</label>
                   <div className="flex gap-4">

@@ -156,6 +156,31 @@ const AdminDashboard = ({ onLogout }) => {
     setModalLoading(false);
   };
 
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
+  // Download handler for private S3 files via backend presigned endpoints
+  const handleDownloadFile = async (type, id, fieldKey) => {
+    try {
+      let endpoint = "";
+      if (type === "students") {
+        endpoint = `${API_BASE}/api/students/${id}/${fieldKey}`;
+      } else if (type === "executives") {
+        endpoint = `${API_BASE}/api/executives/${id}/${fieldKey}`;
+      } else if (type === "employers" && fieldKey === "logo") {
+        endpoint = `${API_BASE}/api/employers/${id}/logo`;
+      }
+      if (!endpoint) return;
+      const res = await fetch(endpoint);
+      if (!res.ok) return alert("Failed to get download link");
+      const { url } = await res.json();
+      if (url) {
+        window.open(url, "_blank");
+      }
+    } catch (_e) {
+      alert("Download failed");
+    }
+  };
+
   // Edit handlers
   const handleEditChange = (key, value) => {
     setEditData(prev => ({ ...prev, [key]: value }));
@@ -171,11 +196,11 @@ const AdminDashboard = ({ onLogout }) => {
       let url = "";
       let method = "PUT";
       if (selectedType === "students") {
-        url = `http://localhost:5000/api/students/${selectedEntry._id}`;
+        url = `${API_BASE}/api/students/${selectedEntry._id}`;
       } else if (selectedType === "executives") {
-        url = `http://localhost:5000/api/executives/${selectedEntry._id}`;
+        url = `${API_BASE}/api/executives/${selectedEntry._id}`;
       } else if (selectedType === "employers") {
-        url = `http://localhost:5000/api/employers/${selectedEntry._id}`;
+        url = `${API_BASE}/api/employers/${selectedEntry._id}`;
       }
       const res = await fetch(url, {
         method,
@@ -209,11 +234,11 @@ const AdminDashboard = ({ onLogout }) => {
       };
       let url = "";
       if (selectedType === "students") {
-        url = `http://localhost:5000/api/students/${selectedEntry._id}`;
+        url = `${API_BASE}/api/students/${selectedEntry._id}`;
       } else if (selectedType === "executives") {
-        url = `http://localhost:5000/api/executives/${selectedEntry._id}`;
+        url = `${API_BASE}/api/executives/${selectedEntry._id}`;
       } else if (selectedType === "employers") {
-        url = `http://localhost:5000/api/employers/${selectedEntry._id}`;
+        url = `${API_BASE}/api/employers/${selectedEntry._id}`;
       }
       const res = await fetch(url, {
         method: "DELETE",
@@ -240,7 +265,7 @@ const AdminDashboard = ({ onLogout }) => {
   const testBackendConnection = async () => {
     try {
       console.log("🧪 Testing backend connection...");
-      const response = await fetch("http://localhost:5000/api/test");
+      const response = await fetch(`${API_BASE}/api/test`);
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Backend connection successful:", data);
@@ -262,9 +287,9 @@ const AdminDashboard = ({ onLogout }) => {
       };
 
       const [studentsRes, executivesRes, employersRes] = await Promise.all([
-        fetch("http://localhost:5000/api/students", { headers }),
-        fetch("http://localhost:5000/api/executives", { headers }),
-        fetch("http://localhost:5000/api/employers", { headers }),
+        fetch(`${API_BASE}/api/students`, { headers }),
+        fetch(`${API_BASE}/api/executives`, { headers }),
+        fetch(`${API_BASE}/api/employers`, { headers }),
       ]);
 
       console.log("Students response status:", studentsRes.status);
@@ -1016,14 +1041,13 @@ const AdminDashboard = ({ onLogout }) => {
                         )
                       ) : (
                         (field.key === "resume" || field.key === "photo") && selectedEntry[field.key] ? (
-                          <a
-                            href={selectedEntry[field.key]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline text-xs"
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDownloadFile(selectedType, selectedEntry._id, field.key); }}
+                            className="text-blue-600 underline text-xs text-left"
                           >
                             Download
-                          </a>
+                          </button>
                         ) : field.key === "workExperience" ? (
                           <div className="text-gray-800 text-sm py-1 px-2 bg-gray-50 rounded max-h-32 overflow-y-auto">
                             {selectedEntry[field.key] && Array.isArray(selectedEntry[field.key]) && selectedEntry[field.key].length > 0 ? (
@@ -1049,6 +1073,19 @@ const AdminDashboard = ({ onLogout }) => {
                     </div>
                   ))}
                 </div>
+                {/* Employer logo download (if available) */}
+                {selectedType === 'employers' && selectedEntry?.logo && !editMode && (
+                  <div className="mt-2">
+                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Logo</label>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDownloadFile('employers', selectedEntry._id, 'logo'); }}
+                      className="text-blue-600 underline text-xs"
+                    >
+                      Download
+                    </button>
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row gap-3 justify-end mt-6 border-t pt-4">
                   {editMode ? (
                     <>

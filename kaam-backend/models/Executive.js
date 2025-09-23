@@ -13,6 +13,7 @@ const executiveSchema = new mongoose.Schema({
   otherCity: { type: String },
   currentLocation: { type: String, required: true },
   dateOfBirth: { type: String, required: true },
+  age: { type: Number },
   maritalStatus: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed'], default: 'Single' },
   currentDesignation: { type: String, required: true },
   totalYearsExperience: { type: String, required: true },
@@ -20,9 +21,24 @@ const executiveSchema = new mongoose.Schema({
   careerObjective: { type: String, required: true },
   highestQualification: { type: String, required: true },
   institutionName: { type: String, required: true },
+  yearOfCompletion: { type: String },
+  specialization: { type: String },
+  additionalCertifications: { type: String },
+  workExperience: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  technicalSkills: { type: String },
+  softSkills: { type: String },
+  toolsTechnologies: { type: String },
+  languagesKnown: { type: String },
+  awardsRecognition: { type: String },
+  hobbiesInterests: { type: String },
+  professionalMemberships: { type: String },
   company: { type: String, required: true },
   position: { type: String, required: true },
   industry: { type: String, required: true },
+  experience: { type: String },
+  preferredLocation: { type: String },
+  skills: { type: String },
+  department: { type: String },
   resume: { type: String, required: true },
   photo: { type: String },
   // Authentication fields
@@ -35,8 +51,7 @@ const executiveSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for efficient queries
-executiveSchema.index({ email: 1 });
+// Index for efficient queries (email already has unique index from unique: true)
 executiveSchema.index({ googleId: 1 });
 
 module.exports = mongoose.model("Executive", executiveSchema);

@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const upload = require("../middleware/s3Upload");
 const adminAuth = require("../middleware/adminAuth");
 
 const employerController = require("../controllers/employerController");
+const { getPresignedUrlFromUrl } = require("../utils/s3Utils");
+const Employer = require("../models/Employer");
 
 // Ensure the upload directory exists
 const uploadPath = path.join(__dirname, "../uploads/employerLogos");
@@ -13,20 +15,10 @@ if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
 
-// Configure Multer for logo upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadPath);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
-});
-const upload = multer({ storage });
+// S3-based upload (no local storage)
 
 // Register employer route with logo upload
-router.post("/", upload.single("logo"), employerController.registerEmployer);
+router.post("/", upload.fields([{ name: "logo", maxCount: 1 }]), employerController.registerEmployer);
 
 // Admin-protected GET route (you need to create getAllEmployers in your controller)
 router.get("/", adminAuth, employerController.getAllEmployers);
@@ -38,3 +30,15 @@ router.put("/:id", adminAuth, employerController.updateEmployer);
 router.delete("/:id", adminAuth, employerController.deleteEmployer);
 
 module.exports = router;
+
+// Download endpoint for employer logo
+router.get("/:id/logo", async (req, res) => {
+  try {
+    const emp = await Employer.findById(req.params.id);
+    if (!emp || !emp.logo) return res.status(404).json({ message: "Not found" });
+    const url = await getPresignedUrlFromUrl(emp.logo);
+    res.json({ url });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});

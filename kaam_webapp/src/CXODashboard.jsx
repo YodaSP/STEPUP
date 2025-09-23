@@ -30,6 +30,19 @@ const CXODashboard = () => {
   const [editForm, setEditForm] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+  const handleViewResume = async () => {
+    try {
+      if (!cxoData?._id) return;
+      const res = await fetch(`${API_BASE}/api/executives/${cxoData._id}/resume`);
+      if (!res.ok) return alert("Failed to get resume link");
+      const { url } = await res.json();
+      if (url) window.open(url, "_blank");
+    } catch (_e) {
+      alert("Unable to open resume");
+    }
+  };
 
   // Add a default field template at the top of the component
   const defaultCXOFields = {
@@ -42,6 +55,7 @@ const CXODashboard = () => {
     phone: '',
     currentLocation: '',
     dateOfBirth: '',
+    age: null,
     maritalStatus: 'Other',
     gender: 'Other',
     state: '',
@@ -101,37 +115,42 @@ const CXODashboard = () => {
       console.log("🔍 CXO Dashboard: Parsed stored data:", parsedData);
       setCxoData(parsedData);
       setIsLoading(false);
-    } else if (email) {
-      // Fetch data from backend if not in localStorage
-      console.log("🔍 CXO Dashboard: Fetching data from backend for email:", email);
-      
-      const fetchData = async () => {
+    }
+
+    if (email) {
+      (async () => {
         try {
-          const response = await fetch(`http://localhost:5000/api/executives/email/${encodeURIComponent(email)}`);
-          console.log("🔍 CXO Dashboard: Backend response status:", response.status);
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          const response = await fetch(`${API_BASE}/api/executives/email/${encodeURIComponent(email)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setCxoData(data);
+            localStorage.setItem("cxoData", JSON.stringify(data));
           }
-          
-          const data = await response.json();
-          console.log("🔍 CXO Dashboard: Backend data received:", data);
-          setCxoData(data);
-          localStorage.setItem("cxoData", JSON.stringify(data));
         } catch (error) {
           console.error("❌ CXO Dashboard: Error fetching CXO data:", error);
-          // Show empty state if fetch fails
         } finally {
           setIsLoading(false);
         }
-      };
-
-      // Add a small delay to ensure backend is ready
-      setTimeout(fetchData, 100);
+      })();
     } else {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    const loadPhoto = async () => {
+      try {
+        if (cxoData && cxoData._id && cxoData.photo) {
+          const res = await fetch(`${API_BASE}/api/executives/${cxoData._id}/photo`);
+          if (res.ok) {
+            const { url } = await res.json();
+            if (url) setPhotoUrl(url);
+          }
+        }
+      } catch (_e) {}
+    };
+    loadPhoto();
+  }, [cxoData]);
 
   const handleLogout = () => {
     localStorage.removeItem("cxoEmail");
@@ -185,10 +204,14 @@ const CXODashboard = () => {
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
                 <div className="text-center mb-6 sm:mb-8">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white text-2xl sm:text-3xl font-bold">
-                      {cxoData.fullName?.charAt(0)?.toUpperCase() || "C"}
-                    </span>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mx-auto mb-4 bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-2xl sm:text-3xl font-bold">
+                        {cxoData.fullName?.charAt(0)?.toUpperCase() || "C"}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     {cxoData.fullName}
@@ -197,6 +220,11 @@ const CXODashboard = () => {
                     {cxoData.currentDesignation || cxoData.position} • {cxoData.company}
                   </p>
                 </div>
+                {cxoData.resume && (
+                  <div className="flex items-center justify-center mt-4">
+                    <button type="button" onClick={handleViewResume} className="text-green-600 underline text-sm">View Resume</button>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -216,6 +244,16 @@ const CXODashboard = () => {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
                       <p className="text-sm sm:text-base text-gray-900">{cxoData.phone}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600 text-sm">🎂</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Age</p>
+                      <p className="text-sm sm:text-base text-gray-900">{cxoData.age ? `${cxoData.age} years old` : 'Not specified'}</p>
                     </div>
                   </div>
 
@@ -314,98 +352,104 @@ const CXODashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Current Designation</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.currentDesignation || cxoData.position}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.currentDesignation || cxoData.position || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Experience</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.totalYearsExperience || cxoData.experience}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.totalYearsExperience || cxoData.experience || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Company</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.company}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.company || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Industry</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.industry}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.industry || "Not specified"}</p>
                   </div>
                 </div>
-                {cxoData.careerObjective && (
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Career Objective</p>
-                    <p className="text-sm sm:text-base text-gray-900">{cxoData.careerObjective}</p>
-                  </div>
-                )}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Career Objective</p>
+                  <p className="text-sm sm:text-base text-gray-900">{cxoData.careerObjective || "Not specified"}</p>
+                </div>
               </div>
 
               {/* Education */}
-              {(cxoData.highestQualification || cxoData.institutionName) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">🎓</span>
-                    Education
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Highest Qualification</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.highestQualification}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Institution</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.institutionName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Year of Completion</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.yearOfCompletion}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Specialization</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.specialization || "Not specified"}</p>
-                    </div>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">🎓</span>
+                  Education
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Highest Qualification</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.highestQualification || "Not specified"}</p>
                   </div>
-                  {cxoData.additionalCertifications && (
-                    <div className="mt-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Additional Certifications</p>
-                      <p className="text-sm sm:text-base text-gray-900">{cxoData.additionalCertifications}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Institution</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.institutionName || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Year of Completion</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.yearOfCompletion || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Specialization</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.specialization || "Not specified"}</p>
+                  </div>
                 </div>
-              )}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Additional Certifications</p>
+                  <p className="text-sm sm:text-base text-gray-900">{cxoData.additionalCertifications || "Not specified"}</p>
+                </div>
+              </div>
 
               {/* Skills */}
-              {(cxoData.technicalSkills || cxoData.softSkills) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">🔧</span>
-                    Skills & Competencies
-                  </h3>
-                  <div className="space-y-4">
-                    {cxoData.technicalSkills && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Technical Skills</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.technicalSkills}</p>
-                      </div>
-                    )}
-                    {cxoData.softSkills && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Soft Skills</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.softSkills}</p>
-                      </div>
-                    )}
-                    {cxoData.toolsTechnologies && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tools & Technologies</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.toolsTechnologies}</p>
-                      </div>
-                    )}
-                    {cxoData.languagesKnown && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Languages Known</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.languagesKnown}</p>
-                      </div>
-                    )}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">🔧</span>
+                  Skills & Competencies
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Technical Skills</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.technicalSkills || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Soft Skills</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.softSkills || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tools & Technologies</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.toolsTechnologies || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Languages Known</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.languagesKnown || "Not specified"}</p>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Additional Information */}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">⭐</span>
+                  Additional Information
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships || "Not specified"}</p>
+                  </div>
+                </div>
+              </div>
 
               {/* Work Experience */}
               {cxoData.workExperience && cxoData.workExperience.length > 0 && (
@@ -448,35 +492,6 @@ const CXODashboard = () => {
                 </div>
               )}
 
-              {/* Additional Information */}
-              {(cxoData.awardsRecognition || cxoData.hobbiesInterests || cxoData.professionalMemberships) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">📋</span>
-                    Additional Information
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {cxoData.awardsRecognition && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition}</p>
-                      </div>
-                    )}
-                    {cxoData.hobbiesInterests && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests}</p>
-                      </div>
-                    )}
-                    {cxoData.professionalMemberships && (
-                      <div className="sm:col-span-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Preferences & Contact */}
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
@@ -565,76 +580,74 @@ const CXODashboard = () => {
                   setEditLoading(false);
                   return;
                 }
-                const data = new FormData();
-                for (let key in allFields) {
-                  if (key === 'currentLocation') {
-                    if (allFields.country === 'IN') {
-                      let loc = allFields.state === 'Others' ? allFields.otherState : allFields.state;
-                      loc += ', ' + (allFields.state === 'Others' ? allFields.otherCity : allFields.city);
-                      data.append('currentLocation', loc);
-                    } else {
-                      data.append('currentLocation', allFields.currentLocation);
-                    }
-                  } else if (key !== 'state' && key !== 'city' && key !== 'otherState' && key !== 'otherCity' && key !== 'otherCountry') {
-                    data.append(key, allFields[key] ?? '');
+                const { resume, photo, state, city, otherState, otherCity, country, currentLocation, ...formData } = allFields;
+                const formDataToSend = new FormData();
+                
+                // Compose currentLocation as in registration (similar to student dashboard)
+                let locationToSend = '';
+                if (country === 'IN') {
+                  locationToSend = (state === 'Others' ? otherState : state) + ', ' + (state === 'Others' ? otherCity : city);
+                  // Always send state/city/otherState/otherCity
+                  formDataToSend.append('state', state);
+                  formDataToSend.append('city', city);
+                  formDataToSend.append('otherState', otherState);
+                  formDataToSend.append('otherCity', otherCity);
+                } else {
+                  locationToSend = currentLocation;
+                  formDataToSend.append('state', '');
+                  formDataToSend.append('city', '');
+                  formDataToSend.append('otherState', '');
+                  formDataToSend.append('otherCity', '');
+                }
+                formDataToSend.append('currentLocation', locationToSend);
+                
+                // Append all other fields except state/city/otherState/otherCity and file fields
+                for (const key in formData) {
+                  if (key === 'resume' || key === 'photo') continue;
+                  const val = formData[key];
+                  if (val !== null && val !== undefined) {
+                    formDataToSend.append(key, val);
                   }
                 }
-                if (allFields.resume instanceof File) data.append('resume', allFields.resume);
-                if (allFields.photo instanceof File) data.append('photo', allFields.photo);
                 
-                // Use the new auth route for profile updates
-                const response = await fetch(`http://localhost:5000/api/auth/update-profile/executive/${execId}`, {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(Object.fromEntries(data)),
+                if (resume instanceof File) {
+                  formDataToSend.append('resume', resume);
+                }
+                if (photo instanceof File) {
+                  formDataToSend.append('photo', photo);
+                }
+                
+                // When replacing files, send current URLs so backend can delete old objects
+                if (photo instanceof File && cxoData?.photo) {
+                  formDataToSend.append('currentPhotoUrl', cxoData.photo);
+                }
+                if (resume instanceof File && cxoData?.resume) {
+                  formDataToSend.append('currentResumeUrl', cxoData.resume);
+                }
+                
+                // Use the same pattern as student dashboard
+                const response = await fetch(`${API_BASE}/api/executives/${execId}`, {
+                  method: "PUT",
+                  body: formDataToSend,
                 });
                 
                 if (response.ok) {
                   const updated = await response.json();
+                  setCxoData(updated);
+                  localStorage.setItem("cxoData", JSON.stringify(updated));
                   
-                  // If password was provided, update it separately
-                  if (allFields.password && allFields.password.trim()) {
-                    try {
-                      const passwordResponse = await fetch(`http://localhost:5000/api/auth/set-password`, {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          email: cxoData.email,
-                          password: allFields.password,
-                          userType: "executive"
-                        }),
-                      });
-                      
-                      if (passwordResponse.ok) {
-                        console.log("Password updated successfully");
-                      } else {
-                        const passwordError = await passwordResponse.text();
-                        console.warn("Password update failed:", passwordError);
-                      }
-                    } catch (passwordErr) {
-                      console.warn("Password update error:", passwordErr);
-                    }
-                  }
-                  
-                  // Refresh user data to get the latest information
+                  // Refresh photo preview if updated
                   try {
-                    const refreshResponse = await fetch(`http://localhost:5000/api/auth/test-user-data/executive/${cxoData.email}`);
-                    if (refreshResponse.ok) {
-                      const refreshData = await refreshResponse.json();
-                      const newUserData = refreshData.testResponse.user;
-                      setCxoData(newUserData);
-                      localStorage.setItem("cxoData", JSON.stringify(newUserData));
+                    if (updated.photo) {
+                      const pres = await fetch(`${API_BASE}/api/executives/${updated._id}/photo`);
+                      if (pres.ok) {
+                        const { url } = await pres.json();
+                        setPhotoUrl(url || "");
+                      }
                     }
-                  } catch (refreshErr) {
-                    console.warn("Failed to refresh user data:", refreshErr);
-                  }
+                  } catch (_e) {}
                   
                   setEditModalOpen(false);
-                  alert("Profile updated successfully!");
                 } else {
                   const errorText = await response.text();
                   alert("Failed to update profile: " + errorText);

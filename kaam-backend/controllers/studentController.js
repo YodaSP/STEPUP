@@ -1,6 +1,19 @@
 const Student = require("../models/Student");
 const bcrypt = require("bcryptjs");
 
+// Helper function to calculate age from date of birth
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return null;
+  const birthDate = new Date(dateOfBirth);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const registerStudent = async (req, res) => {
   try {
     console.log('Received student registration:', req.body, req.files);
@@ -9,6 +22,7 @@ const registerStudent = async (req, res) => {
       email,
       phone,
       password,
+      dateOfBirth,
       country,
       otherCountry,
       state,
@@ -28,12 +42,13 @@ const registerStudent = async (req, res) => {
       gender,
     } = req.body;
 
-    const resume = req.files?.resume?.[0]?.path;
-    const photo = req.files?.photo?.[0]?.path;
+    // With multer-s3, locations are available at .location (public URL) and .key/.bucket
+    const resume = req.files?.resume?.[0]?.location || req.files?.resume?.[0]?.path;
+    const photo = req.files?.photo?.[0]?.location || req.files?.photo?.[0]?.path;
 
     // Validate required fields (add country, state, city for new registrations)
-    if (!fullName || !email || !phone || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
-      return res.status(400).json({ message: "All required fields must be provided, including gender." });
+    if (!fullName || !email || !phone || !dateOfBirth || !country || !state || !city || !university || !degree || !passingDate || !skills || !jobRole || !preferredLocation || !currentLocation || !resume || !gender) {
+      return res.status(400).json({ message: "All required fields must be provided, including date of birth and gender." });
     }
     
     // Password validation - simplified (no strict requirements)
@@ -59,11 +74,16 @@ const registerStudent = async (req, res) => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
+    // Calculate age from date of birth
+    const age = calculateAge(dateOfBirth);
+
     const student = new Student({
       fullName,
       email,
       phone,
       password: hashedPassword,
+      dateOfBirth,
+      age,
       country,
       otherCountry,
       state,
@@ -143,11 +163,15 @@ const getStudentLocationStats = async (req, res) => {
 const updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const update = { ...req.body };
+    const { photo, resume, ...bodyWithoutFiles } = req.body;
+    const update = { ...bodyWithoutFiles };
     
     console.log('🔍 Update Student Debug - ID:', id);
     console.log('🔍 Update Student Debug - Request body:', req.body);
-    console.log('🔍 Update Student Debug - Update object:', update);
+    console.log('🔍 Update Student Debug - Request files:', req.files);
+    console.log('🔍 Update Student Debug - Body without files:', bodyWithoutFiles);
+    console.log('🔍 Update Student Debug - Photo from body:', photo, typeof photo);
+    console.log('🔍 Update Student Debug - Resume from body:', resume, typeof resume);
     
     // Handle password update if provided
     if (update.password && update.password.trim() !== '') {
@@ -162,18 +186,39 @@ const updateStudent = async (req, res) => {
     }
     
     if (req.body.gender) update.gender = req.body.gender;
+    
+    // Handle date of birth update and calculate age
+    if (req.body.dateOfBirth) {
+      update.dateOfBirth = req.body.dateOfBirth;
+      update.age = calculateAge(req.body.dateOfBirth);
+    }
+    
     // If files are present, add them
     if (req.files?.resume) {
       if (req.files.resume[0]?.mimetype !== "application/pdf") {
         return res.status(400).json({ message: "Resume must be a PDF." });
       }
-      update.resume = req.files.resume[0].path;
+      // Delete old resume from S3 if replacing
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.resume && req.body.currentResumeUrl) {
+          await deleteObjectFromUrl(req.body.currentResumeUrl);
+        }
+      } catch (_e) {}
+      update.resume = req.files.resume[0].location || req.files.resume[0].path;
     }
     if (req.files?.photo) {
       if (req.files.photo[0]?.mimetype && !req.files.photo[0].mimetype.startsWith("image/")) {
         return res.status(400).json({ message: "Profile photo must be an image." });
       }
-      update.photo = req.files.photo[0].path;
+      // Delete old photo from S3 if replacing
+      try {
+        const { deleteObjectFromUrl } = require('../utils/s3Utils');
+        if (update.photo && req.body.currentPhotoUrl) {
+          await deleteObjectFromUrl(req.body.currentPhotoUrl);
+        }
+      } catch (_e) {}
+      update.photo = req.files.photo[0].location || req.files.photo[0].path;
     }
     
     console.log('🔍 Update Student Debug - Final update object:', update);

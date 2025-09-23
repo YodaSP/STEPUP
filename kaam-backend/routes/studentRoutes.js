@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/upload");
+const upload = require("../middleware/s3Upload");
 const adminAuth = require("../middleware/adminAuth"); // import the middleware
 
 const { registerStudent, getAllStudents, getStudentByEmail, getStudentLocationStats } = require("../controllers/studentController");
 const { updateStudent } = require("../controllers/studentController");
 const { deleteStudent } = require("../controllers/studentController");
+const { getPresignedUrlFromUrl } = require("../utils/s3Utils");
+const Student = require("../models/Student");
 
 router.post(
   "/",
@@ -39,3 +41,27 @@ router.get("/email/:email", getStudentByEmail);
 router.get("/location-stats", getStudentLocationStats);
 
 module.exports = router;
+
+// Download endpoints (presigned URLs)
+router.get("/:id/resume", async (req, res) => {
+  try {
+    const s = await Student.findById(req.params.id);
+    if (!s || !s.resume) return res.status(404).json({ message: "Not found" });
+    const url = await getPresignedUrlFromUrl(s.resume);
+    res.json({ url });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+router.get("/:id/photo", async (req, res) => {
+  try {
+    const s = await Student.findById(req.params.id);
+    if (!s || !s.photo) return res.status(404).json({ message: "Not found" });
+    const url = await getPresignedUrlFromUrl(s.photo);
+    res.json({ url });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+

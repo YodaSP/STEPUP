@@ -14,7 +14,7 @@ const registerEmployer = async (req, res) => {
       location,
     } = req.body;
 
-    const logo = req.files?.logo?.[0]?.path;
+    const logo = (req.files?.logo?.[0]?.location || req.files?.logo?.[0]?.path);
 
     if (!companyName || !contactPerson || !email || !phone) {
       return res.status(400).json({ message: "Required fields missing" });
