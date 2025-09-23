@@ -352,128 +352,104 @@ const CXODashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Current Designation</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.currentDesignation || cxoData.position}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.currentDesignation || cxoData.position || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Experience</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.totalYearsExperience || cxoData.experience}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.totalYearsExperience || cxoData.experience || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Company</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.company}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.company || "Not specified"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Industry</p>
-                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.industry}</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.industry || "Not specified"}</p>
                   </div>
                 </div>
-                {cxoData.careerObjective && (
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Career Objective</p>
-                    <p className="text-sm sm:text-base text-gray-900">{cxoData.careerObjective}</p>
-                  </div>
-                )}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Career Objective</p>
+                  <p className="text-sm sm:text-base text-gray-900">{cxoData.careerObjective || "Not specified"}</p>
+                </div>
               </div>
 
               {/* Education */}
-              {(cxoData.highestQualification || cxoData.institutionName) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">🎓</span>
-                    Education
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Highest Qualification</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.highestQualification}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Institution</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.institutionName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Year of Completion</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.yearOfCompletion}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Specialization</p>
-                      <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.specialization || "Not specified"}</p>
-                    </div>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">🎓</span>
+                  Education
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Highest Qualification</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.highestQualification || "Not specified"}</p>
                   </div>
-                  {cxoData.additionalCertifications && (
-                    <div className="mt-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Additional Certifications</p>
-                      <p className="text-sm sm:text-base text-gray-900">{cxoData.additionalCertifications}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Institution</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.institutionName || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Year of Completion</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.yearOfCompletion || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Specialization</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">{cxoData.specialization || "Not specified"}</p>
+                  </div>
                 </div>
-              )}
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Additional Certifications</p>
+                  <p className="text-sm sm:text-base text-gray-900">{cxoData.additionalCertifications || "Not specified"}</p>
+                </div>
+              </div>
 
               {/* Skills */}
-              {(cxoData.technicalSkills || cxoData.softSkills || cxoData.toolsTechnologies || cxoData.languagesKnown) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">🔧</span>
-                    Skills & Competencies
-                  </h3>
-                  <div className="space-y-4">
-                    {cxoData.technicalSkills && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Technical Skills</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.technicalSkills}</p>
-                      </div>
-                    )}
-                    {cxoData.softSkills && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Soft Skills</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.softSkills}</p>
-                      </div>
-                    )}
-                    {cxoData.toolsTechnologies && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tools & Technologies</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.toolsTechnologies}</p>
-                      </div>
-                    )}
-                    {cxoData.languagesKnown && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Languages Known</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.languagesKnown}</p>
-                      </div>
-                    )}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">🔧</span>
+                  Skills & Competencies
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Technical Skills</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.technicalSkills || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Soft Skills</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.softSkills || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tools & Technologies</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.toolsTechnologies || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Languages Known</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.languagesKnown || "Not specified"}</p>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Additional Information */}
-              {(cxoData.awardsRecognition || cxoData.hobbiesInterests || cxoData.professionalMemberships) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">⭐</span>
-                    Additional Information
-                  </h3>
-                  <div className="space-y-4">
-                    {cxoData.awardsRecognition && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition}</p>
-                      </div>
-                    )}
-                    {cxoData.hobbiesInterests && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests}</p>
-                      </div>
-                    )}
-                    {cxoData.professionalMemberships && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships}</p>
-                      </div>
-                    )}
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                  <span className="text-2xl mr-3">⭐</span>
+                  Additional Information
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
+                    <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships || "Not specified"}</p>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Work Experience */}
               {cxoData.workExperience && cxoData.workExperience.length > 0 && (
@@ -516,35 +492,6 @@ const CXODashboard = () => {
                 </div>
               )}
 
-              {/* Additional Information */}
-              {(cxoData.awardsRecognition || cxoData.hobbiesInterests || cxoData.professionalMemberships) && (
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
-                    <span className="text-2xl mr-3">📋</span>
-                    Additional Information
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {cxoData.awardsRecognition && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Awards & Recognition</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.awardsRecognition}</p>
-                      </div>
-                    )}
-                    {cxoData.hobbiesInterests && (
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hobbies & Interests</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.hobbiesInterests}</p>
-                      </div>
-                    )}
-                    {cxoData.professionalMemberships && (
-                      <div className="sm:col-span-2">
-                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Memberships</p>
-                        <p className="text-sm sm:text-base text-gray-900">{cxoData.professionalMemberships}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Preferences & Contact */}
               <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-6 sm:p-8">
