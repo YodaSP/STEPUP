@@ -3,9 +3,14 @@ const { OAuth2Client } = require('google-auth-library');
 const rateLimit = require('express-rate-limit');
 
 // Enhanced JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+if (!JWT_SECRET || !GOOGLE_CLIENT_ID) {
+  console.error('❌ Missing required environment variables: JWT_SECRET or GOOGLE_CLIENT_ID');
+  process.exit(1);
+}
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 

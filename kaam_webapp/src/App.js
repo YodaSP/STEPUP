@@ -33,8 +33,8 @@ const App = () => {
     localStorage.removeItem("adminAuthenticated");
   };
 
-  // Google OAuth Client ID - Replace with your actual client ID
-  const GOOGLE_CLIENT_ID = "606908174117-1ggpj6nf4j3kcgnch68om76avvhc7lak.apps.googleusercontent.com";
+  // Google OAuth Client ID - Load from environment variable
+  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "1010453906755-0pfkgb6o4dnq85jt9cl0k4u267gluv67.apps.googleusercontent.com";
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>

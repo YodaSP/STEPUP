@@ -6,6 +6,15 @@ const path = require("path");
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
+// Load environment variables
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  console.error('❌ Missing Google OAuth credentials in environment variables');
+  process.exit(1);
+}
+
 const studentRoutes = require("./routes/studentRoutes");
 const executiveRoutes = require("./routes/executiveRoutes");
 const employerRoutes = require("./routes/employerRoutes");
