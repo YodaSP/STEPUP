@@ -224,7 +224,7 @@ const HomePage = () => {
             {/* Left: Main content */}
             <div className="flex-1 max-w-2xl space-y-6 sm:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight tracking-tight mt-0 mb-2">
-                Welcome to <span className="text-blue-600">Testingg</span>
+                Welcome to <span className="text-blue-600">STEPUP</span>
               </h1>
               <p className="text-lg sm:text-xl text-gray-700 leading-relaxed mb-2">
                 Empowering students and executives to take their careers to the next level.
