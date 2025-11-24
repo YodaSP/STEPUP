@@ -2,21 +2,17 @@ pipeline {
     agent any
 
     environment {
-        // Extract repo name from Git URL and convert to lowercase for Docker
-        REPO_NAME = "${env.GIT_URL.split('/').last().replace('.git', '').toLowerCase()}"
+        REPO_NAME = "stepup"
         IMAGE_TAG = "build-${env.BUILD_NUMBER}"
+        APP_DIR = "./kaam_webapp"
+        PORT = "3000"
+        CONTAINER_NAME = "stepup"
     }
 
     stages {
-
-        stage('Checkout Code') {
+        stage('Checkout SCM') {
             steps {
-                echo "Cleaning old workspace..."
-                deleteDir()
-                
-                echo "Fetching latest code from Git..."
                 checkout scm
-                
                 echo "Using repo name: ${REPO_NAME}"
             }
         }
@@ -25,26 +21,31 @@ pipeline {
             steps {
                 echo "Building new Docker image with tag ${IMAGE_TAG}..."
                 sh """
-                    docker build --no-cache -t ${REPO_NAME}:${IMAGE_TAG} ./kaam_webapp
+                    docker build --no-cache -t ${REPO_NAME}:${IMAGE_TAG} ${APP_DIR}
                 """
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                echo "Stopping old container (if exists) and running new container..."
+                echo "Stopping old container and freeing port ${PORT}..."
                 sh """
-                    docker rm -f ${REPO_NAME} || true
-                    docker run -d --name ${REPO_NAME} -p 3000:3000 ${REPO_NAME}:${IMAGE_TAG}
+                    # Stop any container with the same name
+                    docker rm -f ${CONTAINER_NAME} || true
+
+                    # Kill any process using the port
+                    lsof -ti:${PORT} | xargs -r kill -9
+
+                    # Run the new container
+                    docker run -d --name ${CONTAINER_NAME} -p ${PORT}:${PORT} ${REPO_NAME}:${IMAGE_TAG}
                 """
             }
         }
-
     }
 
     post {
         success {
-            echo "App is available at http://<jenkins-ip>:3000"
+            echo "Build and deployment succeeded!"
         }
         failure {
             echo "Build or deployment failed. Check logs above."
