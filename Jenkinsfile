@@ -17,17 +17,27 @@ pipeline {
         }
 
         stage('Run Docker Container') {
-            steps {
-                echo "Stopping old container and running new one..."
-                sh """
-                    # Stop and remove old container if exists
-                    docker rm -f stepup || true
+    steps {
+        echo "Stopping old container and running new one..."
 
-                    # Run new container
-                    docker run -d --name stepup -p 3000:3000 stepup:build-${BUILD_NUMBER}
-                """
-            }
-        }
+        sh """
+            echo "Looking for existing container named 'stepup'..."
+
+            # If container named 'stepup' exists, stop & remove it
+            if docker ps -a --format '{{.Names}}' | grep -w stepup >/dev/null 2>&1; then
+                echo "Existing container 'stepup' found. Removing..."
+                docker rm -f stepup
+            else
+                echo "No existing container named 'stepup' found. Continuing..."
+            fi
+
+            echo "Starting new container: stepup (image: stepup:build-${BUILD_NUMBER})"
+
+            docker run -d --name stepup -p 3000:3000 stepup:build-${BUILD_NUMBER}
+        """
+    }
+}
+
     }
 
     post {
