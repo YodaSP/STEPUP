@@ -178,7 +178,7 @@ const HomePage = () => {
               <div className="flex items-center">
                 <a href="/" onClick={e => { e.preventDefault(); navigate('/'); }} className="focus:outline-none">
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                    <span className="text-blue-600">MAHADEVAMINDS</span>
+                    <span className="text-blue-600">STEPUP</span>
                   </h1>
                 </a>
               </div>
@@ -224,7 +224,7 @@ const HomePage = () => {
             {/* Left: Main content */}
             <div className="flex-1 max-w-2xl space-y-6 sm:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight tracking-tight mt-0 mb-2">
-                Welcome to <span className="text-blue-600">MAHADEVAMINDS</span>
+                Welcome to <span className="text-blue-600">STEPUP</span>
               </h1>
               <p className="text-lg sm:text-xl text-gray-700 leading-relaxed mb-2">
                 Empowering students and executives to take their careers to the next level.
@@ -348,7 +348,7 @@ const HomePage = () => {
             <div className="container-responsive">
               <div className="text-center max-w-4xl mx-auto">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 drop-shadow-lg">
-                  Welcome to MAHADEVAMINDS - Your Gateway to Interim Jobs
+                  Welcome to STEPUP - Your Gateway to Interim Jobs
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl text-blue-100 max-w-3xl mx-auto mb-10 sm:mb-14 leading-relaxed">
                   Connect with top employers and find opportunities that match your skills.
